@@ -11,7 +11,7 @@ import SwiftUI
 struct ShamanDefenseApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            GameScreen()
         }
     }
 }

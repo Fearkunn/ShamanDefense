@@ -12,8 +12,12 @@ enum EntityKind {
     case trap
 }
 
+enum GhostID: String, CaseIterable, Hashable {
+    case keti, poci, gugun, yayang, yuyul
+}
+
 struct CharacterData: Identifiable, Hashable {
-    let id = UUID()
+    let id: GhostID
     let name: String
     let cost: Int
     let symbol: String
@@ -23,10 +27,10 @@ struct CharacterData: Identifiable, Hashable {
 
 struct GameCollection {
     static let allCharacters: [CharacterData] = [
-        CharacterData(name: "Keti",   cost: 3, symbol: "flame.fill",    tint: .orange, kind: .tower),
-        CharacterData(name: "Poci",   cost: 4, symbol: "drop.fill",     tint: .cyan,   kind: .tower),
-        CharacterData(name: "Gugun",  cost: 5, symbol: "bolt.fill",     tint: .yellow, kind: .tower),
-        CharacterData(name: "Yayang", cost: 2, symbol: "hare.fill",     tint: .pink,   kind: .trap),
-        CharacterData(name: "Yuyul",  cost: 2, symbol: "tortoise.fill", tint: .purple, kind: .trap)
+        CharacterData(id: .keti,   name: "Keti",   cost: 3, symbol: "flame.fill",    tint: .orange, kind: .tower),
+        CharacterData(id: .poci,   name: "Poci",   cost: 4, symbol: "drop.fill",     tint: .cyan,   kind: .tower),
+        CharacterData(id: .gugun,  name: "Gugun",  cost: 5, symbol: "bolt.fill",     tint: .yellow, kind: .tower),
+        CharacterData(id: .yayang, name: "Yayang", cost: 2, symbol: "hare.fill",     tint: .pink,   kind: .trap),
+        CharacterData(id: .yuyul,  name: "Yuyul",  cost: 2, symbol: "tortoise.fill", tint: .purple, kind: .trap)
     ]
 }
