@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		13B4CC4F2FAB1D70009D8049 /* ShamanDefense.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ShamanDefense.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		13B4CC4F2FAB1D70009D8049 /* ShamanDefenseTD.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ShamanDefenseTD.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -40,7 +40,7 @@
 		13B4CC502FAB1D70009D8049 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				13B4CC4F2FAB1D70009D8049 /* ShamanDefense.app */,
+				13B4CC4F2FAB1D70009D8049 /* ShamanDefenseTD.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -67,7 +67,7 @@
 			packageProductDependencies = (
 			);
 			productName = ShamanDefense;
-			productReference = 13B4CC4F2FAB1D70009D8049 /* ShamanDefense.app */;
+			productReference = 13B4CC4F2FAB1D70009D8049 /* ShamanDefenseTD.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -253,7 +253,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 528U372J6U;
+				DEVELOPMENT_TEAM = DFUYA8Z9D5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -266,8 +266,8 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.challenge2.ShamanDefense;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.mozaldy.ShamanDefense;
+				PRODUCT_NAME = ShamanDefenseTD;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
@@ -285,7 +285,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 528U372J6U;
+				DEVELOPMENT_TEAM = DFUYA8Z9D5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -298,8 +298,8 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.challenge2.ShamanDefense;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.mozaldy.ShamanDefense;
+				PRODUCT_NAME = ShamanDefenseTD;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
