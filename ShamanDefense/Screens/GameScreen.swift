@@ -23,25 +23,13 @@ struct GameScreen: View {
 
     var body: some View {
         GeometryReader { geo in
-            let topInset = geo.safeAreaInsets.top
-            let bottomInset = geo.safeAreaInsets.bottom
-            let fullHeight = geo.size.height + topInset + bottomInset
-            let fieldMaxY = geo.size.height - trayHeight
+            let sceneHeight = geo.size.height - trayHeight
 
-            ZStack {
-                SpriteView(scene: scene)
-                    .ignoresSafeArea()
-
-                if let drag = dragging, drag.location.y < fieldMaxY {
-                    let liftedY = drag.location.y - dragLift
-                    DragPreview(character: drag.character)
-                        .position(x: drag.location.x, y: liftedY)
-                        .opacity(0.7)
-                        .allowsHitTesting(false)
-                }
-
+            ZStack(alignment: .top) {
                 VStack(spacing: 0) {
-                    Spacer()
+                    SpriteView(scene: scene)
+                        .frame(height: sceneHeight)
+
                     DeploymentTrayHUD(
                         selected: $selected,
                         coordSpace: gameCoordSpace,
@@ -50,15 +38,26 @@ struct GameScreen: View {
                         },
                         onDragEnded: { character, location in
                             dragging = nil
-                            guard location.y < fieldMaxY else { return }
+                            guard location.y < sceneHeight else { return }
                             let liftedY = location.y - dragLift
                             let scenePoint = CGPoint(
                                 x: location.x,
-                                y: fullHeight - (topInset + liftedY)
+                                y: sceneHeight - liftedY
                             )
                             scene.place(character, at: scenePoint)
                         }
                     )
+                    .frame(height: trayHeight)
+                }
+
+                if let drag = dragging, drag.location.y < sceneHeight {
+                    let liftedY = drag.location.y - dragLift
+                    let scenePoint = CGPoint(x: drag.location.x, y: sceneHeight - liftedY)
+                    let placeable = scene.canPlace(drag.character, at: scenePoint)
+                    DragPreview(character: drag.character, isPlaceable: placeable)
+                        .position(x: drag.location.x, y: liftedY)
+                        .opacity(0.85)
+                        .allowsHitTesting(false)
                 }
             }
             .coordinateSpace(name: gameCoordSpace)

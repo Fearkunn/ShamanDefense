@@ -6,20 +6,8 @@
 //
 
 import SpriteKit
-import SwiftUI
 
-final class YuyulNode: SKSpriteNode {
-    init() {
-        super.init(texture: nil, color: .purple, size: CGSize(width: 56, height: 56))
-
-        let label = SKLabelNode(text: "Yuyul")
-        label.fontName = "AvenirNext-Bold"
-        label.fontSize = 12
-        label.fontColor = .white
-        label.verticalAlignmentMode = .center
-        label.horizontalAlignmentMode = .center
-        addChild(label)
-    }
-
+final class YuyulNode: GhostNode {
+    init() { super.init(displayName: "Yuyul", fillColor: .purple) }
     required init?(coder: NSCoder) { fatalError("init(coder:) not implemented") }
 }

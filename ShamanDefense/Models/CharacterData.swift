@@ -12,6 +12,10 @@ enum EntityKind {
     case trap
 }
 
+enum GhostMetrics {
+    static let diameter: CGFloat = 30
+}
+
 enum GhostID: String, CaseIterable, Hashable {
     case keti, poci, gugun, yayang, yuyul
 }

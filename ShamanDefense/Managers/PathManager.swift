@@ -12,6 +12,34 @@ class PathManager {
     private let tileSize: CGFloat
     private weak var scene: SKScene?
     private(set) var waypoints: [CGPoint] = []
+
+    var pathHalfWidth: CGFloat { tileSize / 2 }
+
+    func isOnPath(_ point: CGPoint, tolerance: CGFloat? = nil) -> Bool {
+        distanceToPath(point) <= (tolerance ?? pathHalfWidth)
+    }
+
+    func distanceToPath(_ point: CGPoint) -> CGFloat {
+        guard waypoints.count >= 2 else { return .greatestFiniteMagnitude }
+        var best = CGFloat.greatestFiniteMagnitude
+        for i in 0..<waypoints.count - 1 {
+            let d = pointToSegment(point, waypoints[i], waypoints[i + 1])
+            if d < best { best = d }
+        }
+        return best
+    }
+
+    private func pointToSegment(_ p: CGPoint, _ a: CGPoint, _ b: CGPoint) -> CGFloat {
+        let dx = b.x - a.x
+        let dy = b.y - a.y
+        let lenSq = dx * dx + dy * dy
+        guard lenSq > 0 else { return hypot(p.x - a.x, p.y - a.y) }
+        var t = ((p.x - a.x) * dx + (p.y - a.y) * dy) / lenSq
+        t = max(0, min(1, t))
+        let cx = a.x + t * dx
+        let cy = a.y + t * dy
+        return hypot(p.x - cx, p.y - cy)
+    }
     
     init(scene: SKScene, tileSize: CGFloat = 36) {
         self.scene    = scene

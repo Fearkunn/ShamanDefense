@@ -6,20 +6,8 @@
 //
 
 import SpriteKit
-import SwiftUI
 
-final class KetiNode: SKSpriteNode {
-    init() {
-        super.init(texture: nil, color: .orange, size: CGSize(width: 56, height: 56))
-
-        let label = SKLabelNode(text: "Keti")
-        label.fontName = "AvenirNext-Bold"
-        label.fontSize = 12
-        label.fontColor = .white
-        label.verticalAlignmentMode = .center
-        label.horizontalAlignmentMode = .center
-        addChild(label)
-    }
-
+final class KetiNode: GhostNode {
+    init() { super.init(displayName: "Keti", fillColor: .orange) }
     required init?(coder: NSCoder) { fatalError("init(coder:) not implemented") }
 }
