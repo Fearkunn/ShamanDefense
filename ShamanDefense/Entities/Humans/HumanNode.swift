@@ -12,100 +12,81 @@ class HumanNode: SKNode {
 
     private(set) var hp: CGFloat = 1
 
-    override init () {
+    private static let walkLeft   = [SKTexture(imageNamed: "human_left_1"),   SKTexture(imageNamed: "human_left_2")]
+    private static let walkTop    = [SKTexture(imageNamed: "human_top_1"),    SKTexture(imageNamed: "human_top_2")]
+    private static let walkBottom = [SKTexture(imageNamed: "human_bottom_1"), SKTexture(imageNamed: "human_bottom_2")]
+    private static let spriteSize = CGSize(width: 32, height: 50)
+
+    private let sprite: SKSpriteNode
+
+    override init() {
+        sprite = SKSpriteNode(texture: Self.walkLeft[0], size: Self.spriteSize)
         super.init()
-        let iconLabel = SKLabelNode(text: "🏃🏻‍➡️")
-        iconLabel.fontSize = 40
-        iconLabel.verticalAlignmentMode = .center
-        addChild(iconLabel)
+        constraints = [SKConstraint.zRotation(SKRange(constantValue: 0))]
+        addChild(sprite)
+        face(dx: -1, dy: 0)
     }
 
-    required init?(coder: NSCoder) {fatalError()}
+    required init?(coder: NSCoder) { fatalError() }
 
     func takeDamage(_ amount: CGFloat) {
         guard hp > 0 else { return }
         hp = max(0, hp - amount)
-        if hp <= 0 {
-            removeAllActions()
-            run(.sequence([.fadeOut(withDuration: 0.15), .removeFromParent()]))
-        }
+        guard hp <= 0 else { return }
+        removeAllActions()
+        run(.sequence([.fadeOut(withDuration: 0.15), .removeFromParent()]))
     }
 
     func applySlow(factor: CGFloat, duration: TimeInterval) {
         speed = factor
-        guard let scene else { return }
-        scene.run(.sequence([
+        run(.sequence([
             .wait(forDuration: duration),
             .run { [weak self] in self?.speed = 1 }
-        ]))
+        ]), withKey: "slow")
     }
 
     func applyFreeze(duration: TimeInterval) {
         isPaused = true
-        guard let scene else { return }
-        scene.run(.sequence([
+        run(.sequence([
             .wait(forDuration: duration),
             .run { [weak self] in self?.isPaused = false }
-        ]))
+        ]), withKey: "freeze")
     }
-    
-    func followPath(_ waypoints: [CGPoint], curveRadius: CGFloat = 40) {
+
+    func followPath(_ waypoints: [CGPoint]) {
         guard waypoints.count > 1 else { return }
-        let smoothPath = buildCurvedPath(waypoints: waypoints, curveRadius: curveRadius)
-        
-        let follow = SKAction.follow(
-            smoothPath,
-            asOffset:     false,
-            orientToPath: false,
-            speed:        moveSpeed
-        )
-        run(.sequence([follow, .removeFromParent()]))
-    }
-    
-    private func buildCurvedPath(waypoints: [CGPoint], curveRadius: CGFloat) -> CGPath {
-        let path = CGMutablePath()
-        path.move(to: waypoints[0])
-        
-        for i in 1..<waypoints.count - 1 {
-            let prev   = waypoints[i - 1]
-            let corner = waypoints[i]
-            let next   = waypoints[i + 1]
-            
-            // Vektor masuk (dari prev ke corner), dinormalisasi
-            let d1  = hypot(corner.x - prev.x, corner.y - prev.y)
-            let dx1 = (corner.x - prev.x) / d1
-            let dy1 = (corner.y - prev.y) / d1
-            
-            // Vektor keluar (dari corner ke next), dinormalisasi
-            let d2  = hypot(next.x - corner.x, next.y - corner.y)
-            let dx2 = (next.x - corner.x) / d2
-            let dy2 = (next.y - corner.y) / d2
-            
-            // Pastikan radius tidak melebihi setengah panjang segmen
-            // agar kurva tidak overlap antar dua corner yang berdekatan
-            let r = min(curveRadius, d1 / 2, d2 / 2)
-            
-            // Titik di mana kurva dimulai (sebelum corner)
-            let curveStart = CGPoint(
-                x: corner.x - dx1 * r,
-                y: corner.y - dy1 * r
-            )
-            
-            // Titik di mana kurva berakhir (setelah corner)
-            let curveEnd = CGPoint(
-                x: corner.x + dx2 * r,
-                y: corner.y + dy2 * r
-            )
-            
-            // Lurus menuju titik awal kurva
-            path.addLine(to: curveStart)
-            
-            path.addQuadCurve(to: curveEnd, control: corner)
+        position = waypoints[0]
+
+        var steps: [SKAction] = []
+        for i in 0..<waypoints.count - 1 {
+            let from = waypoints[i]
+            let to   = waypoints[i + 1]
+            let dx   = to.x - from.x
+            let dy   = to.y - from.y
+            let duration = TimeInterval(hypot(dx, dy) / moveSpeed)
+
+            steps.append(.run { [weak self] in self?.face(dx: dx, dy: dy) })
+            steps.append(.move(to: to, duration: duration))
         }
-        
-        // Lurus ke waypoint terakhir
-        path.addLine(to: waypoints.last!)
-        
-        return path
+        steps.append(.removeFromParent())
+        run(.sequence(steps))
+    }
+
+    private func face(dx: CGFloat, dy: CGFloat) {
+        let frames: [SKTexture]
+        let xScale: CGFloat
+        if abs(dx) >= abs(dy) {
+            frames = Self.walkLeft
+            xScale = dx < 0 ? 1 : -1
+        } else {
+            frames = dy > 0 ? Self.walkTop : Self.walkBottom
+            xScale = 1
+        }
+        sprite.xScale = xScale
+        sprite.removeAction(forKey: "walk")
+        sprite.run(
+            .repeatForever(.animate(with: frames, timePerFrame: 0.25, resize: false, restore: false)),
+            withKey: "walk"
+        )
     }
 }

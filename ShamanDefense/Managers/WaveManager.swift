@@ -32,6 +32,6 @@ class WaveManager {
         guard let scene else { return }
         let human = HumanNode()
         scene.addChild(human)
-        human.followPath(waypoints, curveRadius: tileSize * 0.8)
+        human.followPath(waypoints)
     }
 }
