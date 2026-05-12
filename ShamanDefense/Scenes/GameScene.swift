@@ -223,19 +223,24 @@ final class GameScene: SKScene {
     private func loadMap() {
         var wpNodes: [SKNode] = []
         if let ref = SKReferenceNode(fileNamed: "Map") {
+            let authored = SKScene(fileNamed: "Map")?.size ?? size
+            let scale = min(size.width / authored.width, size.height / authored.height)
+            ref.setScale(scale)
+            ref.position = CGPoint(x: size.width / 2, y: size.height / 2)
             mapLayer.addChild(ref)
             collectWaypointNodes(in: ref, into: &wpNodes)
         }
         wpNodes.sort { ($0.name ?? "") < ($1.name ?? "") }
-        let points: [CGPoint]
-        if wpNodes.count >= 2 {
-            points = wpNodes.map { node in
-                guard let parent = node.parent else { return node.position }
-                return convert(node.position, from: parent)
-            }
-            wpNodes.forEach { $0.isHidden = true }
-        } else {
-            points = fallbackWaypoints()
+        guard wpNodes.count >= 2 else {
+            assertionFailure("Map.sks must contain at least 2 wp_* nodes")
+            return
+        }
+        let points = wpNodes.map { node -> CGPoint in
+            guard let parent = node.parent else { return node.position }
+            return convert(node.position, from: parent)
+        }
+        wpNodes.forEach { node in
+            if !(node is SKSpriteNode) { node.isHidden = true }
         }
         registry.add(PathEntity(waypoints: points, halfWidth: tileSize / 2))
     }
@@ -249,25 +254,6 @@ final class GameScene: SKScene {
                 collectWaypointNodes(in: child, into: &out)
             }
         }
-    }
-
-    private func fallbackWaypoints() -> [CGPoint] {
-        let w = size.width, h = size.height
-        func snap(_ x: CGFloat, _ y: CGFloat) -> CGPoint {
-            CGPoint(x: round(x / tileSize) * tileSize, y: round(y / tileSize) * tileSize)
-        }
-        return [
-            snap(w * 0.08, h * 0.92), snap(w * 0.08, h * 0.82),
-            snap(w * 0.55, h * 0.82), snap(w * 0.55, h * 0.73),
-            snap(w * 0.72, h * 0.73), snap(w * 0.72, h * 0.88),
-            snap(w * 0.93, h * 0.88), snap(w * 0.93, h * 0.62),
-            snap(w * 0.28, h * 0.62), snap(w * 0.28, h * 0.73),
-            snap(w * 0.08, h * 0.73), snap(w * 0.08, h * 0.42),
-            snap(w * 0.28, h * 0.42), snap(w * 0.28, h * 0.54),
-            snap(w * 0.72, h * 0.54), snap(w * 0.72, h * 0.24),
-            snap(w * 0.93, h * 0.24), snap(w * 0.93, h * 0.42),
-            snap(w * 0.50, h * 0.42), snap(w * 0.50, h * 0.08)
-        ]
     }
 
     func spawnTrap(_ character: CharacterData, at point: CGPoint) {
