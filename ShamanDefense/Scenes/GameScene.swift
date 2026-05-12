@@ -51,9 +51,13 @@ final class GameScene: SKScene {
         addChild(fxLayer)
 
         registry = EntityRegistry(systems: [
+            GKComponentSystem<GKComponent>(componentClass: EffectsComponent.self),
             GKComponentSystem<GKComponent>(componentClass: PathFollowComponent.self),
             GKComponentSystem<GKComponent>(componentClass: HomingComponent.self),
             GKComponentSystem<GKComponent>(componentClass: LifetimeComponent.self),
+            GKComponentSystem<GKComponent>(componentClass: ProximityTriggerComponent.self),
+            GKComponentSystem<GKComponent>(componentClass: PathRunnerComponent.self),
+            GKComponentSystem<GKComponent>(componentClass: SlowAuraComponent.self),
             GKComponentSystem<GKComponent>(componentClass: StateMachineComponent.self),
         ])
 
@@ -190,25 +194,26 @@ final class GameScene: SKScene {
     func place(_ character: CharacterData, at scenePoint: CGPoint) {
         guard canPlace(character, at: scenePoint) else { return }
         switch character.kind {
-        case .tower:
-            spawnTower(character, at: scenePoint)
-        case .trap:
-            // Legacy trap path until Phase 5.
-            let node = Self.makeLegacyTrap(for: character)
-            node.position = scenePoint
-            addChild(node)
-            if let trap = node as? TrapNode {
-                trap.pathWaypoints = pathManager.waypoints
-                trap.arm()
-            }
+        case .tower: spawnTower(character, at: scenePoint)
+        case .trap:  spawnTrap(character, at: scenePoint)
         }
     }
 
-    static func makeLegacyTrap(for character: CharacterData) -> GhostNode {
-        switch character.id {
-        case .yayang: return YayangNode()
-        case .yuyul:  return YuyulNode()
-        default: fatalError("not a trap")
+    func spawnTrap(_ character: CharacterData, at point: CGPoint) {
+        let entity = EntityFactory.makeTrap(character, waypoints: pathManager.waypoints)
+        entity.component(ofType: SpriteComponent.self)?.position = point
+
+        if let trigger = entity.component(ofType: ProximityTriggerComponent.self) {
+            trigger.onTrigger = { [weak entity] _ in
+                guard let entity,
+                      let sm = entity.component(ofType: StateMachineComponent.self) else { return }
+                switch character.id {
+                case .yayang: sm.stateMachine.enter(YayangTriggeredState.self)
+                case .yuyul:  sm.stateMachine.enter(YuyulTriggeredState.self)
+                default: break
+                }
+            }
         }
+        installEntity(entity, in: trapsLayer)
     }
 }

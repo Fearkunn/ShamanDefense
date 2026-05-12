@@ -36,6 +36,29 @@ struct TowerStats: Hashable {
     }
 }
 
+struct TrapStats: Hashable {
+    let triggerRadius: CGFloat
+    let freezeDuration: TimeInterval?
+    let runSpeed: CGFloat?
+    let slowRadius: CGFloat?
+    let slowFactor: CGFloat?
+    let slowDuration: TimeInterval?
+
+    init(triggerRadius: CGFloat,
+         freezeDuration: TimeInterval? = nil,
+         runSpeed: CGFloat? = nil,
+         slowRadius: CGFloat? = nil,
+         slowFactor: CGFloat? = nil,
+         slowDuration: TimeInterval? = nil) {
+        self.triggerRadius = triggerRadius
+        self.freezeDuration = freezeDuration
+        self.runSpeed = runSpeed
+        self.slowRadius = slowRadius
+        self.slowFactor = slowFactor
+        self.slowDuration = slowDuration
+    }
+}
+
 enum GhostID: String, CaseIterable, Hashable {
     case keti, poci, gugun, yayang, yuyul
 }
@@ -48,6 +71,7 @@ struct CharacterData: Identifiable, Hashable {
     let tint: Color
     let kind: EntityKind
     let tower: TowerStats?
+    let trap: TrapStats?
 
     var range: CGFloat? { tower?.range }
 }
@@ -62,12 +86,20 @@ struct GameCollection {
 
     static let allCharacters: [CharacterData] = [
         CharacterData(id: .keti,   name: "Keti",   cost: 3, symbol: "flame.fill",    tint: .orange, kind: .tower,
-                      tower: TowerStats(range: 100, fireInterval: 2.0, damage: 1, projectileSpeed: 420)),
+                      tower: TowerStats(range: 100, fireInterval: 2.0, damage: 1, projectileSpeed: 420),
+                      trap: nil),
         CharacterData(id: .poci,   name: "Poci",   cost: 4, symbol: "drop.fill",     tint: .cyan,   kind: .tower,
-                      tower: TowerStats(range: 60,  fireInterval: 0.8, damage: 1, projectileSpeed: 600)),
+                      tower: TowerStats(range: 60,  fireInterval: 0.8, damage: 1, projectileSpeed: 600),
+                      trap: nil),
         CharacterData(id: .gugun,  name: "Gugun",  cost: 5, symbol: "bolt.fill",     tint: .yellow, kind: .tower,
-                      tower: TowerStats(range: 70, fireInterval: 1.2, damage: 1, projectileSpeed: 500, aoeRadius: 50)),
-        CharacterData(id: .yayang, name: "Yayang", cost: 2, symbol: "hare.fill",     tint: .pink,   kind: .trap,  tower: nil),
-        CharacterData(id: .yuyul,  name: "Yuyul",  cost: 2, symbol: "tortoise.fill", tint: .purple, kind: .trap,  tower: nil)
+                      tower: TowerStats(range: 70, fireInterval: 1.2, damage: 1, projectileSpeed: 500, aoeRadius: 50),
+                      trap: nil),
+        CharacterData(id: .yayang, name: "Yayang", cost: 2, symbol: "hare.fill",     tint: .pink,   kind: .trap,
+                      tower: nil,
+                      trap: TrapStats(triggerRadius: GhostMetrics.diameter / 2 + 6, freezeDuration: 2.0)),
+        CharacterData(id: .yuyul,  name: "Yuyul",  cost: 2, symbol: "tortoise.fill", tint: .purple, kind: .trap,
+                      tower: nil,
+                      trap: TrapStats(triggerRadius: GhostMetrics.diameter / 2 + 6,
+                                      runSpeed: 220, slowRadius: 60, slowFactor: 0.4, slowDuration: 2.0))
     ]
 }

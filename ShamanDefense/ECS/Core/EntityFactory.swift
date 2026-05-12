@@ -34,11 +34,52 @@ enum EntityFactory {
             downFrames: humanBottomFrames
         ))
         entity.addComponent(PathFollowComponent(waypoints: waypoints, speed: humanMoveSpeed))
+        entity.addComponent(EffectsComponent())
         entity.addComponent(StateMachineComponent(
-            states: [HumanWalkingState()],
+            states: [
+                HumanWalkingState(),
+                HumanSlowedState(),
+                HumanFrozenState(),
+                HumanDyingState(),
+            ],
             initialState: HumanWalkingState.self
         ))
 
+        return entity
+    }
+
+    static func makeTrap(_ character: CharacterData, waypoints: [CGPoint]) -> GameEntity {
+        guard let stats = character.trap else {
+            fatalError("makeTrap requires character.trap stats (id=\(character.id))")
+        }
+        let entity = GameEntity(archetype: .trap)
+        let body = makeGhostBody(displayName: character.name, fillColor: SKColor(character.tint))
+
+        entity.addComponent(SpriteComponent(node: body))
+        entity.addComponent(TeamComponent(team: .ghost))
+        entity.addComponent(ProximityTriggerComponent(triggerRadius: stats.triggerRadius))
+
+        var states: [GKState] = [TrapArmedState(), TrapSpentState()]
+
+        switch character.id {
+        case .yayang:
+            if let freeze = stats.freezeDuration {
+                entity.addComponent(FreezeAuraComponent(duration: freeze))
+            }
+            states.append(YayangTriggeredState())
+        case .yuyul:
+            if let runSpeed = stats.runSpeed {
+                entity.addComponent(PathRunnerComponent(waypoints: waypoints, speed: runSpeed))
+            }
+            if let r = stats.slowRadius, let f = stats.slowFactor, let d = stats.slowDuration {
+                entity.addComponent(SlowAuraComponent(radius: r, factor: f, duration: d))
+            }
+            states.append(YuyulTriggeredState())
+        default:
+            fatalError("Unknown trap id \(character.id)")
+        }
+
+        entity.addComponent(StateMachineComponent(states: states, initialState: TrapArmedState.self))
         return entity
     }
 
