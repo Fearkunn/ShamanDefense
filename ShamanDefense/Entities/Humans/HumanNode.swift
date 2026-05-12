@@ -9,8 +9,8 @@ import SpriteKit
 
 class HumanNode: SKNode {
     private let moveSpeed: CGFloat = 100
-
     private(set) var hp: CGFloat = 1
+    var onDefeat: (() -> Void)?
 
     private static let walkLeft   = [SKTexture(imageNamed: "human_left_1"),   SKTexture(imageNamed: "human_left_2")]
     private static let walkTop    = [SKTexture(imageNamed: "human_top_1"),    SKTexture(imageNamed: "human_top_2")]
@@ -34,7 +34,9 @@ class HumanNode: SKNode {
         hp = max(0, hp - amount)
         guard hp <= 0 else { return }
         removeAllActions()
+        onDefeat?()
         run(.sequence([.fadeOut(withDuration: 0.15), .removeFromParent()]))
+        }
     }
 
     func applySlow(factor: CGFloat, duration: TimeInterval) {
@@ -53,7 +55,7 @@ class HumanNode: SKNode {
         ]), withKey: "freeze")
     }
 
-    func followPath(_ waypoints: [CGPoint]) {
+    func followPath(_ waypoints: [CGPoint], onReachFinish: (() -> Void)? = nil) {
         guard waypoints.count > 1 else { return }
         position = waypoints[0]
 
@@ -67,6 +69,9 @@ class HumanNode: SKNode {
 
             steps.append(.run { [weak self] in self?.face(dx: dx, dy: dy) })
             steps.append(.move(to: to, duration: duration))
+        }
+        if let onReachFinish {
+            steps.append(.run { onReachFinish() })
         }
         steps.append(.removeFromParent())
         run(.sequence(steps))
