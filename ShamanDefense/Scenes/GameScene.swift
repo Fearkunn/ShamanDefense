@@ -6,13 +6,23 @@
 //
 
 import SpriteKit
+import GameplayKit
 
 final class GameScene: SKScene {
 
     private let tileSize: CGFloat = 36
     private let minPlacementSpacing: CGFloat = GhostMetrics.diameter
     private var pathManager: PathManager!
-    private var waveManager: WaveManager!
+    private(set) var waveManager: WaveManager!
+
+    private(set) var registry: EntityRegistry!
+    private var lastUpdateTime: TimeInterval = 0
+
+    let humansLayer = SKNode()
+    let towersLayer = SKNode()
+    let trapsLayer = SKNode()
+    let projectilesLayer = SKNode()
+    let fxLayer = SKNode()
 
     private func tooCloseToExisting(_ point: CGPoint) -> Bool {
         for child in children {
@@ -29,11 +39,76 @@ final class GameScene: SKScene {
         scaleMode = .resizeFill
         anchorPoint = CGPoint(x: 0, y: 0)
 
+        humansLayer.zPosition = 2
+        towersLayer.zPosition = 1
+        trapsLayer.zPosition = 1
+        projectilesLayer.zPosition = 5
+        fxLayer.zPosition = 4
+        addChild(humansLayer)
+        addChild(towersLayer)
+        addChild(trapsLayer)
+        addChild(projectilesLayer)
+        addChild(fxLayer)
+
+        let pathFollowSystem      = GKComponentSystem<GKComponent>(componentClass: PathFollowComponent.self)
+        let stateMachineSystem    = GKComponentSystem<GKComponent>(componentClass: StateMachineComponent.self)
+        registry = EntityRegistry(systems: [
+            pathFollowSystem,
+            stateMachineSystem,
+        ])
+
         pathManager = PathManager(scene: self, tileSize: tileSize)
         pathManager.setup()
 
         waveManager = WaveManager(scene: self, waypoints: pathManager.waypoints, tileSize: tileSize)
         waveManager.start()
+    }
+
+    override func update(_ currentTime: TimeInterval) {
+        let dt: TimeInterval
+        if lastUpdateTime == 0 {
+            dt = 0
+        } else {
+            dt = currentTime - lastUpdateTime
+        }
+        lastUpdateTime = currentTime
+        registry?.update(deltaTime: dt)
+    }
+
+    func spawnHuman() {
+        guard let pathManager else { return }
+        let entity = EntityFactory.makeHuman(waypoints: pathManager.waypoints)
+        if let pf = entity.component(ofType: PathFollowComponent.self) {
+            pf.onArrive = { [weak self, weak entity] in
+                guard let self, let entity else { return }
+                self.removeEntity(entity)
+            }
+        }
+        if let health = entity.component(ofType: HealthComponent.self),
+           let sprite = entity.component(ofType: SpriteComponent.self) {
+            health.onDeath = { [weak self, weak entity] in
+                guard let self, let entity else { return }
+                let node = sprite.node
+                node.removeAllActions()
+                node.run(.sequence([.fadeOut(withDuration: 0.15), .removeFromParent()]))
+                self.removeEntity(entity)
+            }
+        }
+        installEntity(entity, in: humansLayer)
+    }
+
+    func installEntity(_ entity: GameEntity, in layer: SKNode) {
+        if let node = entity.component(ofType: SpriteComponent.self)?.node {
+            layer.addChild(node)
+        }
+        registry.add(entity)
+    }
+
+    func removeEntity(_ entity: GameEntity) {
+        registry.remove(entity)
+        if let node = entity.component(ofType: SpriteComponent.self)?.node, node.parent != nil {
+            node.removeFromParent()
+        }
     }
 
     func canPlace(_ character: CharacterData, at scenePoint: CGPoint) -> Bool {
