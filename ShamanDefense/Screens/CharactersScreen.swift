@@ -16,7 +16,9 @@ struct CharactersScreen: View {
         description: "Keti attacks with piercing sound waves that disable humans.",
         symbol: "flame.fill",
         tint: .orange,
-        kind: .tower
+        kind: .tower,
+        tower: TowerStats(range: 100, fireInterval: 2.0, damage: 1, projectileSpeed: 420),
+        trap: nil
     )
 
     var body: some View {
