@@ -27,9 +27,10 @@ struct CharacterCardUI: View {
 
             VStack(spacing: 4) {
                 Spacer(minLength: 8)
-                Image(systemName: character.symbol)
-                    .font(.system(size: 30, weight: .bold))
-                    .foregroundStyle(.white)
+                Image(CharacterSprites.cardImageName(for: character.id))
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 50)
                     .shadow(color: .black.opacity(0.5), radius: 1, y: 1)
                 Spacer(minLength: 2)
                 Text(character.name)

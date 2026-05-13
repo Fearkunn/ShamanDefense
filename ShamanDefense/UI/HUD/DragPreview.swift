@@ -11,8 +11,6 @@ struct DragPreview: View {
     let character: CharacterData
     var isPlaceable: Bool? = nil
 
-    private static let diameter: CGFloat = GhostMetrics.diameter
-
     private var validityColor: Color? {
         switch isPlaceable {
         case .some(true):  return .green
@@ -23,18 +21,27 @@ struct DragPreview: View {
 
     var body: some View {
         ZStack {
-            Circle()
-                .fill(character.tint)
-                .overlay(Circle().stroke(Color.black, lineWidth: 1))
-                .frame(width: Self.diameter, height: Self.diameter)
-            Text(character.name)
-                .font(.system(size: 10, weight: .bold))
-                .foregroundStyle(.white)
+            if let range = character.range {
+                Circle()
+                    .fill(character.tint.opacity(0.12))
+                    .overlay(
+                        Circle().strokeBorder(
+                            character.tint.opacity(0.7),
+                            style: StrokeStyle(lineWidth: 1.5, dash: [6, 4])
+                        )
+                    )
+                    .frame(width: range * 2, height: range * 2)
+                    .allowsHitTesting(false)
+            }
+            Image("\(character.id.rawValue)_bottom")
+                .resizable()
+                .scaledToFit()
+                .frame(height: CharacterSprites.spriteHeight)
             if let validityColor {
                 Circle()
                     .fill(validityColor.opacity(0.4))
                     .overlay(Circle().stroke(validityColor, lineWidth: 2))
-                    .frame(width: Self.diameter, height: Self.diameter)
+                    .frame(width: GhostMetrics.diameter, height: GhostMetrics.diameter)
                     .allowsHitTesting(false)
             }
         }
