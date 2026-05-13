@@ -67,6 +67,7 @@ struct CharacterData: Identifiable, Hashable {
     let id: GhostID
     let name: String
     let cost: Int
+    let description: String
     let symbol: String
     let tint: Color
     let kind: EntityKind
@@ -85,21 +86,10 @@ struct GameCollection {
     }
 
     static let allCharacters: [CharacterData] = [
-        CharacterData(id: .keti,   name: "Keti",   cost: 3, symbol: "flame.fill",    tint: .orange, kind: .tower,
-                      tower: TowerStats(range: 100, fireInterval: 2.0, damage: 1, projectileSpeed: 420),
-                      trap: nil),
-        CharacterData(id: .poci,   name: "Poci",   cost: 4, symbol: "drop.fill",     tint: .cyan,   kind: .tower,
-                      tower: TowerStats(range: 60,  fireInterval: 0.8, damage: 1, projectileSpeed: 600),
-                      trap: nil),
-        CharacterData(id: .gugun,  name: "Gugun",  cost: 5, symbol: "bolt.fill",     tint: .yellow, kind: .tower,
-                      tower: TowerStats(range: 70, fireInterval: 1.2, damage: 1, projectileSpeed: 500, aoeRadius: 50),
-                      trap: nil),
-        CharacterData(id: .yayang, name: "Yayang", cost: 2, symbol: "hare.fill",     tint: .pink,   kind: .trap,
-                      tower: nil,
-                      trap: TrapStats(triggerRadius: GhostMetrics.diameter / 2 + 6, freezeDuration: 2.0)),
-        CharacterData(id: .yuyul,  name: "Yuyul",  cost: 2, symbol: "tortoise.fill", tint: .purple, kind: .trap,
-                      tower: nil,
-                      trap: TrapStats(triggerRadius: GhostMetrics.diameter / 2 + 6,
-                                      runSpeed: 220, slowRadius: 60, slowFactor: 0.4, slowDuration: 2.0))
+      CharacterData(id: .keti, name: "Keti", cost: 3, description: "Keti attacks with piercing sound waves that disable humans.", symbol: "flame.fill", tint: .orange, kind: .tower, tower: TowerStats(range: 100, fireInterval: 2.0, damage: 1, projectileSpeed: 420), trap: nil),
+      CharacterData(id: .poci, name: "Poci", cost: 4, description: "Poci attacks at close range by charging forward and headbutting enemies.", symbol: "drop.fill", tint: .cyan, kind: .tower, tower: TowerStats(range: 60, fireInterval: 0.8, damage: 1, projectileSpeed: 600), trap: nil),
+      CharacterData(id: .gugun, name: "Gugun", cost: 5, description: "Gugun's massive power can wipe out up to 5 humans at once.", symbol: "bolt.fill", tint: .yellow, kind: .tower, tower: TowerStats(range: 70, fireInterval: 1.2, damage: 1, projectileSpeed: 500, aoeRadius: 50), trap: nil),
+      CharacterData(id: .yayang, name: "Yayang", cost: 2, description: "Yayang can freeze humans for 5 seconds by shocking them with its sudden presence.", symbol: "hare.fill", tint: .pink, kind: .trap, tower: nil, trap: TrapStats(triggerRadius: GhostMetrics.diameter / 2 + 6, freezeDuration: 2.0)),
+      CharacterData(id: .yuyul, name: "Yuyul", cost: 2, description: "Yuyul creates an area that slows human movement for 5 seconds.", symbol: "tortoise.fill", tint: .purple, kind: .trap, tower: nil, trap: TrapStats(triggerRadius: GhostMetrics.diameter / 2 + 6, runSpeed: 220, slowRadius: 60, slowFactor: 0.4, slowDuration: 2.0))
     ]
 }
