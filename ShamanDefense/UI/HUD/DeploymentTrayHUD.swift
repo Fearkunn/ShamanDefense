@@ -22,9 +22,9 @@ struct DeploymentTrayHUD: View {
                 ForEach(GameCollection.allCharacters) { character in
                     CharacterCardUI(
                         character: character,
-                        isSelected: selected == character,
                         onTap: { selected = character }
                     )
+                    .frame(height: 110)
                     .gesture(
                         DragGesture(minimumDistance: 4, coordinateSpace: .named(coordSpace))
                             .onChanged { value in

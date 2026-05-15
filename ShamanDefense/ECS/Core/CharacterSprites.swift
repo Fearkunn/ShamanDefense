@@ -19,10 +19,7 @@ enum CharacterSprites {
     }
 
     static func cardImageName(for id: GhostID) -> String {
-        switch id {
-        case .gugun, .yuyul, .yayang: return "\(id.rawValue)_card"
-        case .keti, .poci:            return "\(id.rawValue)_bottom"
-        }
+        return "\(id.rawValue)_card"
     }
 
     private static func assetName(for id: GhostID, facing: FacingDirection) -> String {

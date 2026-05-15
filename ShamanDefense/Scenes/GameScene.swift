@@ -26,9 +26,13 @@ final class GameScene: SKScene {
     let hudLayer = SKNode()
     
     private var scoreLabel: SKLabelNode!
+    private var spiritLabel: SKLabelNode?
+    private var spiritCounterNode: SKSpriteNode?
     private var gameOverNode: GameOverNode?
     private var spawnerEntity: SpawnerEntity?
     private(set) var isGameOver = false
+    
+    private var currentSpirit: Int = 10
     
     private func tooCloseToExisting(_ point: CGPoint) -> Bool {
         for entity in registry.all {
@@ -74,6 +78,8 @@ final class GameScene: SKScene {
         ])
         
         loadMap()
+        setupMapUI()
+        updateSpirit(currentSpirit)
         registry.add(ScoreEntity())
         buildScoreLabel()
         
@@ -150,6 +156,7 @@ final class GameScene: SKScene {
     func humanDefeated() {
         guard !isGameOver, let score = registry.score else { return }
         score.add(1)
+        addSpirit(1)
         scoreLabel.text = "\(score.current)"
         scoreLabel.removeAction(forKey: "pop")
         scoreLabel.run(.sequence([
@@ -290,6 +297,11 @@ final class GameScene: SKScene {
     
     func place(_ character: CharacterData, at scenePoint: CGPoint) {
         guard canPlace(character, at: scenePoint) else { return }
+        
+        guard spendSpirit(character.cost) else {
+            return
+        }
+        
         switch character.kind {
         case .tower: spawnTower(character, at: scenePoint)
         case .trap:  spawnTrap(character, at: scenePoint)
@@ -352,4 +364,78 @@ final class GameScene: SKScene {
         }
         installEntity(entity, in: trapsLayer)
     }
+    
+    private func setupMapUI() {
+        guard let path = registry.path else { return }
+        let endPoint = path.waypoints.last ?? .zero
+        let dukunOffset = CGPoint(x: 0, y: -20)
+        let counterOffset = CGPoint(x: -5, y: -70)
+        
+        let dukun = SKSpriteNode(imageNamed: "shaman")
+        dukun.setScale(0.5)
+        dukun.position = CGPoint(
+            x: endPoint.x + dukunOffset.x,
+            y: endPoint.y + dukunOffset.y
+        )
+        dukun.zPosition = 10
+        mapLayer.addChild(dukun)
+        
+        let float = SKAction.sequence([
+            .moveBy(x: 0, y: 10, duration: 1),
+            .moveBy(x: 0, y: -10, duration: 1)
+        ])
+        dukun.run(.repeatForever(float))
+        
+        let counter = SKSpriteNode(imageNamed: "spirit_counter")
+        counter.size = CGSize(width: 110, height: 50)
+        counter.position = CGPoint(
+            x: endPoint.x + counterOffset.x,
+            y: endPoint.y + counterOffset.y
+        )
+        counter.zPosition = 11
+        mapLayer.addChild(counter)
+        
+        spiritCounterNode = counter
+        
+        let label = SKLabelNode(fontNamed: "Newyear Coffee")
+        label.text = "0"
+        label.fontSize = 20
+        label.fontColor = .black
+        label.verticalAlignmentMode = .center
+        label.horizontalAlignmentMode = .center
+        label.zPosition = 12
+        label.position = CGPoint(x: 5, y: 3)
+        
+        counter.addChild(label)
+        
+        spiritLabel = label
+    }
+    
+    func updateSpirit(_ value: Int) {
+        spiritLabel?.text = "\(value)"
+        
+        spiritCounterNode?.run(.sequence([
+            .scale(to: 1.15, duration: 0.08),
+            .scale(to: 1.0, duration: 0.08)
+        ]))
+    }
+    
+    private func addSpirit(_ amount: Int) {
+        currentSpirit += amount
+        updateSpirit(currentSpirit)
+    }
+    
+    @discardableResult
+    private func spendSpirit(_ amount: Int) -> Bool {
+        
+        guard currentSpirit >= amount else {
+            return false
+        }
+        
+        currentSpirit -= amount
+        updateSpirit(currentSpirit)
+        
+        return true
+    }
+    
 }
