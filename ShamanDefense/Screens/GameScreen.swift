@@ -20,6 +20,7 @@ struct GameScreen: View {
     }()
     @State private var selected: CharacterData? = nil
     @State private var dragging: (character: CharacterData, location: CGPoint)? = nil
+    @State private var waveWarning: WaveWarningBannerData? = nil
 
     var body: some View {
         GeometryReader { geo in
@@ -59,8 +60,31 @@ struct GameScreen: View {
                         .opacity(0.85)
                         .allowsHitTesting(false)
                 }
+
+                if let waveWarning {
+                    WaveWarningBanner(data: waveWarning)
+                        .padding(.top, 16)
+                        .padding(.horizontal, 16)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                        .zIndex(10)
+                        .allowsHitTesting(false)
+                }
             }
+            .animation(.easeInOut(duration: 0.22), value: waveWarning)
             .coordinateSpace(name: gameCoordSpace)
+        }
+    }
+
+    // Hook this to WaveManager / system callback later.
+    private func showIncomingWaveWarning(waveNumber: Int) {
+        waveWarning = WaveWarningBannerData(
+            title: "WAVE \(waveNumber) INCOMING",
+            subtitle: "Prepare your defenses"
+        )
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.2) {
+            withAnimation {
+                waveWarning = nil
+            }
         }
     }
 }

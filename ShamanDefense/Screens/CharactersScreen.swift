@@ -23,7 +23,12 @@ struct CharactersScreen: View {
 
     var body: some View {
         ZStack {
-            Color.black
+            Image("map")
+                .resizable()
+                .scaledToFill()
+                .ignoresSafeArea()
+
+            Color.black.opacity(0.35)
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {

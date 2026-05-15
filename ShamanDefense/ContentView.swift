@@ -6,18 +6,23 @@
 //
 
 import SwiftUI
-import SpriteKit
 
 struct ContentView: View {
+    @AppStorage("hasSeenStartStory") private var hasSeenStartStory = false
+
     var body: some View {
-        SpriteView(scene: makeScene())
-            .ignoresSafeArea()
-    }
-    
-    private func makeScene() -> GameScene {
-        let scene = GameScene()
-        scene.scaleMode = .resizeFill
-        return scene
+        Group {
+            if hasSeenStartStory {
+                GameScreen()
+            } else {
+                StartStoryScreen {
+                    hasSeenStartStory = true
+                }
+            }
+        }
+        // selalu tampil story screen dulu 
+        .onAppear {
+            hasSeenStartStory = false
+        }
     }
 }
-
