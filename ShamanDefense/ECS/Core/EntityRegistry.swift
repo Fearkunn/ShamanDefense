@@ -13,6 +13,7 @@ final class EntityRegistry {
     private(set) var all: Set<GameEntity> = []
     private(set) var path: PathComponent?
     private(set) var score: ScoreComponent?
+    private(set) var pause: PauseComponent?
 
     private let systems: [GameSystem]
 
@@ -28,10 +29,14 @@ final class EntityRegistry {
         case .tower:      towers.insert(entity)
         case .trap:       traps.insert(entity)
         case .projectile: projectiles.insert(entity)
+        case .global:     break
         case .scenery:    break
         }
         if let pc = entity.component(ofType: PathComponent.self) {
             path = pc
+        }
+        if let psc = entity.component(ofType: PauseComponent.self) {
+            pause = psc
         }
         if let sc = entity.component(ofType: ScoreComponent.self) {
             score = sc
@@ -60,8 +65,14 @@ final class EntityRegistry {
     }
 
     func update(deltaTime: TimeInterval) {
+        let currentlyPaused = pause?.isPaused ?? false
         for system in systems {
-            system.update(deltaTime: deltaTime)
+            if currentlyPaused {
+                system.update(deltaTime: 0)
+            }
+            else {
+                system.update(deltaTime: deltaTime)
+            }
         }
     }
 }

@@ -21,6 +21,7 @@ struct GameScreen: View {
     @State private var selected: CharacterData? = nil
     @State private var dragging: (character: CharacterData, location: CGPoint)? = nil
     @State private var waveWarning: WaveWarningBannerData? = nil
+    @State private var isPaused = false
 
     var body: some View {
         GeometryReader { geo in
@@ -28,7 +29,7 @@ struct GameScreen: View {
 
             ZStack(alignment: .top) {
                 VStack(spacing: 0) {
-                    SpriteView(scene: scene)
+                    SpriteView(scene: scene, debugOptions: [.showsFPS, .showsPhysics, .showsNodeCount])
                         .frame(height: sceneHeight)
 
                     DeploymentTrayHUD(
@@ -49,6 +50,19 @@ struct GameScreen: View {
                         }
                     )
                     .frame(height: trayHeight)
+                }
+                
+                if isPaused {
+                    PauseOverlayView()
+                }
+
+                HStack {
+                    Spacer()
+                    PauseButton(isPaused: isPaused) {
+                        isPaused.toggle()
+                        scene.pauseComponent?.isPaused = isPaused
+                    }
+                    .padding()
                 }
 
                 if let drag = dragging, drag.location.y < sceneHeight {

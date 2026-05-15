@@ -11,6 +11,7 @@ enum EntityArchetype {
     case trap
     case projectile
     case scenery
+    case global
 }
 
 class GameEntity: GKEntity {

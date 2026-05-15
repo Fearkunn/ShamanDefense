@@ -12,8 +12,9 @@ final class GameScene: SKScene {
     
     private let tileSize: CGFloat = 36
     private let minPlacementSpacing: CGFloat = GhostMetrics.diameter
-    
-    private(set) var registry: EntityRegistry!
+
+    private(set) var registry: EntityRegistry
+    var pauseComponent: PauseComponent? { registry.pause }
     private var lastUpdateTime: TimeInterval = 0
     private var pendingRemovals: [GameEntity] = []
     
@@ -31,9 +32,28 @@ final class GameScene: SKScene {
     private var gameOverNode: GameOverNode?
     private var spawnerEntity: SpawnerEntity?
     private(set) var isGameOver = false
-    
+
     private var currentSpirit: Int = 10
-    
+
+    override init() {
+        registry = EntityRegistry(systems: [
+            EffectsSystem(),
+            PathFollowSystem(),
+            SpawnerSystem(),
+            HomingSystem(),
+            LifetimeSystem(),
+            ProximityTriggerSystem(),
+            PathRunnerSystem(),
+            SlowAuraSystem(),
+            StateMachineSystem(),
+        ])
+        registry.add(GameStateEntity())
+        super.init(size: .zero)
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) not implemented") }
+
+
     private func tooCloseToExisting(_ point: CGPoint) -> Bool {
         for entity in registry.all {
             guard let blocker = entity.component(ofType: PlacementBlockerComponent.self),
@@ -64,19 +84,7 @@ final class GameScene: SKScene {
         addChild(projectilesLayer)
         addChild(fxLayer)
         addChild(hudLayer)
-        
-        registry = EntityRegistry(systems: [
-            EffectsSystem(),
-            PathFollowSystem(),
-            SpawnerSystem(),
-            HomingSystem(),
-            LifetimeSystem(),
-            ProximityTriggerSystem(),
-            PathRunnerSystem(),
-            SlowAuraSystem(),
-            StateMachineSystem(),
-        ])
-        
+
         loadMap()
         setupMapUI()
         updateSpirit(currentSpirit)
@@ -98,7 +106,7 @@ final class GameScene: SKScene {
             dt = currentTime - lastUpdateTime
         }
         lastUpdateTime = currentTime
-        registry?.update(deltaTime: dt)
+        registry.update(deltaTime: dt)
         flushPendingRemovals()
     }
     
@@ -190,7 +198,7 @@ final class GameScene: SKScene {
     
     private func restartGame() {
         gameOverNode = nil
-        let newScene = GameScene(size: size)
+        let newScene = GameScene()
         newScene.scaleMode = scaleMode
         view?.presentScene(newScene, transition: .fade(withDuration: 0.4))
     }
