@@ -34,7 +34,7 @@ struct GameScreen: View {
 
                 VStack {
                     Spacer()
-                    DeploymentTrayHUD(
+                    CharacterTray(
                         selected: $selected,
                         coordSpace: gameCoordSpace,
                         onDragChanged: { character, location in

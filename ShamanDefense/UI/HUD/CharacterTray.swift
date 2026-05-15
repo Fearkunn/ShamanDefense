@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct DeploymentTrayHUD: View {
+struct CharacterTray: View {
     @Binding var selected: CharacterData?
     var coordSpace: String = "game"
     var onDragChanged: (CharacterData, CGPoint) -> Void = { _, _ in }
@@ -45,7 +45,7 @@ private struct StatefulPreviewWrapper: View {
     var body: some View {
         ZStack {
             Color.green.ignoresSafeArea()
-            VStack { Spacer(); DeploymentTrayHUD(selected: $selected) }
+            VStack { Spacer(); CharacterTray(selected: $selected) }
         }
         .coordinateSpace(name: "game")
     }
