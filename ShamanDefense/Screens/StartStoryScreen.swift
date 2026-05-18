@@ -8,10 +8,13 @@
 import SwiftUI
 
 private extension View {
+    var storyTextColor: Color { Color(hex: "#4B4B4B") }
+
     func storyTextStyle() -> some View {
         self
-            .font(.system(.body, design: .rounded).weight(.medium))
-            .foregroundStyle(.black.opacity(0.9))
+            .font(.custom("Montserrat", size: 14))
+            .fontWeight(.bold)
+            .foregroundStyle(storyTextColor)
             .multilineTextAlignment(.center)
             .padding(.horizontal, 20)
     }
@@ -22,10 +25,12 @@ struct StartStoryScreen: View {
     
     @State private var pageIndex = 0
     @State private var visibleCharacterCount = 0
+    @State private var isStartButtonPulsing = false
     
     private var isLastPage: Bool {
         pageIndex == storyPages.count - 1
     }
+    
     
     private var currentStoryCharacters: [Character] {
         Array(storyPages[pageIndex])
@@ -41,7 +46,7 @@ struct StartStoryScreen: View {
     
     private let storyPages: [String] = [
         "You are a shaman living deep in the forest, performing rituals and communicating with wandering spirits.",
-        "Now, the villagers are coming to destroy your house — summon the spirits and protect yourself before they reach you."
+        "Now, the villagers are coming to approach you — summon the spirits and protect yourself before they reach you."
     ]
     
     var body: some View {
@@ -57,37 +62,34 @@ struct StartStoryScreen: View {
             VStack(spacing: 20) {
                 Spacer()
                 
-                VStack(spacing: 14) {
+                VStack(spacing: 12) {
                     Text(typedStoryText)
                         .storyTextStyle()
-                    
-                    
-                    if isLastPage {
-                        startDefendingButton
-                            .opacity(isTypingCompleted ? 1 : 0)
-                            .padding(.bottom, 16)
-                    } else {
-                        Color.clear
-                            .frame(height: 8)
-                    }
                 }
                 .frame(maxWidth: .infinity, minHeight: 170, maxHeight: 170, alignment: .center)
                 .background(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .fill(Color.white.opacity(0.95))
+                    Image(pageIndex == 0 ? "bg_story_1" : "bg_story_2")
+                        .resizable()
+                        .scaledToFit()
                 )
                 .padding(.horizontal, 24)
+
+                if isLastPage {
+                    startDefendingButton
+                        .opacity(isTypingCompleted ? 1 : 0)
+                }
                 
                 Spacer()
                 
                 if !isLastPage && isTypingCompleted {
-                    Text("TAP ANYWHERE")
-                        .font(.system(size: 18, weight: .bold))
+                    Text("TAP ANYWHERE!")
+                        .font(.custom("Montserrat", size: 18))
+                        .fontWeight(.bold)
                         .foregroundStyle(.white)
-                        .padding(.bottom, 56)
+                        .padding(.bottom, 72)
                 } else {
                     Color.clear
-                        .frame(height: 56)
+                        .frame(height: 72)
                 }
             }
         }
@@ -109,15 +111,24 @@ struct StartStoryScreen: View {
     }
     
     private var startDefendingButton: some View {
-        Button("START DEFENDING!") {
+        Button {
             onFinish()
         }
-        .font(.system(size: 18, weight: .black, design: .rounded))
-        .foregroundStyle(.white)
-        .padding(.horizontal, 28)
-        .padding(.vertical, 14)
-        .background(Capsule(style: .continuous).fill(Color.black))
+        label: {
+            Image("button_startdefending")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 210)
+                .scaleEffect(isStartButtonPulsing ? 1.07 : 0.96)
+                .animation(
+                    .easeInOut(duration: 0.4).repeatForever(autoreverses: true),
+                    value: isStartButtonPulsing
+                )
+        }
         .buttonStyle(.plain)
+        .onAppear {
+            isStartButtonPulsing = true
+        }
     }
     
     private func typeCurrentStoryText() async {

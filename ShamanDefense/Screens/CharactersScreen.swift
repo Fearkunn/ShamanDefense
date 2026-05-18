@@ -22,37 +22,42 @@ struct CharactersScreen: View {
     )
 
     var body: some View {
-        ZStack {
-            Image("map")
-                .resizable()
-                .scaledToFill()
-                .ignoresSafeArea()
+        GeometryReader { proxy in
+            ZStack {
+                Image("bg_info_character")
+                    .resizable()
+                    .scaledToFill()
+                    .scaleEffect(1.08)
+                    .offset(x: 30)
+                
+                Color.black.opacity(0.4)
+                    .ignoresSafeArea()
 
-            Color.black.opacity(0.35)
-                .ignoresSafeArea()
+                VStack(spacing: 0) {
+                    topBar
+                        .padding(.top, 10)
+                        .padding(.horizontal, 18)
 
-            VStack(spacing: 0) {
-                topBar
-                    .padding(.top, 10)
+                    CharacterDetailCardView(
+                        selectedCharacter: selectedCharacter
+                    )
                     .padding(.horizontal, 18)
+                    .padding(.top, 12)
 
-                CharacterDetailCardView(
-                    selectedCharacter: selectedCharacter
-                )
-                .padding(.horizontal, 18)
-                .padding(.top, 12)
-
-                CharacterSelectionStripView(
-                    selectedCharacter: selectedCharacter,
-                    onSelectCharacter: { character in
-                        selectedCharacter = character
-                    }
-                )
-                .padding(.horizontal, 34)
-                .padding(.top, 8)
-                .padding(.bottom, 16)
+                    CharacterSelectionStripView(
+                        selectedCharacter: selectedCharacter,
+                        onSelectCharacter: { character in
+                            selectedCharacter = character
+                        }
+                    )
+                    .padding(.horizontal, 34)
+                    .padding(.top, 8)
+                    .padding(.bottom, 16)
+                }
             }
+            .frame(width: proxy.size.width, height: proxy.size.height)
         }
+        .ignoresSafeArea()
     }
 
     private var topBar: some View {
