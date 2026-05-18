@@ -10,6 +10,8 @@ import AVKit
 
 struct CharacterVideoPreviewView: View {
     let character: CharacterData
+    var rotateContentDegrees: Double = 0
+    var overlayCounterRotationDegrees: Double = 0
     
     @State private var player: AVPlayer?
     @State private var hasVideo = false
@@ -17,18 +19,29 @@ struct CharacterVideoPreviewView: View {
     
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(Color.white.opacity(0.18))
+            if !hasVideo {
+                Image("video_play")
+                    .resizable()
+                    .scaledToFit()
+                    .padding(8)
+                    .rotationEffect(.degrees(rotateContentDegrees))
+                
+                Image(systemName: "play.circle.fill")
+                    .font(.system(size: 46, weight: .bold))
+                    .foregroundStyle(.white.opacity(0.95))
+                    .shadow(color: .black.opacity(0.35), radius: 4, y: 2)
+                    .rotationEffect(.degrees(overlayCounterRotationDegrees))
+            } else {
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .fill(Color.white.opacity(0.18))
+            }
             
             if let player, hasVideo {
                 VideoPlayer(player: player)
+                    .rotationEffect(.degrees(rotateContentDegrees))
                     .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
             } else {
-                Image(systemName: "play.fill")
-                    .font(.system(size: 24, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.75))
-                    .frame(width: 56, height: 56)
-                    .background(Circle().fill(Color.white.opacity(0.12)))
+                EmptyView()
             }
             
             if hasVideo {
@@ -43,6 +56,7 @@ struct CharacterVideoPreviewView: View {
                                 .font(.system(size: 15, weight: .bold))
                                 .foregroundStyle(.white)
                                 .frame(width: 34, height: 34)
+                                .rotationEffect(.degrees(overlayCounterRotationDegrees))
                         }
                         .padding(10)
                     }

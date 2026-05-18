@@ -22,47 +22,95 @@ private struct RibbonPlate: Shape {
 
 struct CharacterDetailCardView: View {
     let selectedCharacter: CharacterData
+    private let primaryTextColor = Color(hex: "#4B4B4B")
+    
+    private var balancedDescription: String {
+        let words = selectedCharacter.description.split(separator: " ")
+        guard words.count > 3 else { return selectedCharacter.description }
+        
+        if selectedCharacter.id == .yayang || selectedCharacter.id == .poci {
+            let firstBreak = words.count / 3
+            let secondBreak = (words.count * 2) / 3
+            let line1 = words[..<firstBreak].joined(separator: " ")
+            let line2 = words[firstBreak..<secondBreak].joined(separator: " ")
+            let line3 = words[secondBreak...].joined(separator: " ")
+            return line1 + "\n" + line2 + "\n" + line3
+        }
+        
+        let midpoint = words.count / 2
+        let firstLine = words[..<midpoint].joined(separator: " ")
+        let secondLine = words[midpoint...].joined(separator: " ")
+        return firstLine + "\n" + secondLine
+    }
     
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 8) {
             nameCard
+                .offset(y: -8)
             
-            ScrollView(showsIndicators: false) {
-                Text(selectedCharacter.description)
-                    .font(.system(size: 18, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.95))
+            ZStack {
+                Image("button_character")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                
+                Text(balancedDescription)
+                    .font(.custom("Montserrat", size: 15))
+                    .fontWeight(.bold)
+                    .foregroundStyle(primaryTextColor)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    .frame(maxWidth: .infinity, minHeight: 88, alignment: .center)
+                    .lineLimit(3)
+                    .minimumScaleFactor(0.75)
+                    .allowsTightening(true)
+                    .padding(.horizontal, 18)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
             }
-            .frame(height: 88)
-            .background(RoundedRectangle(cornerRadius: 18).fill(Color.white.opacity(0.18)))
+            .frame(height: 110)
+            .offset(y: -50)
             
-            if selectedCharacter.kind == .trap {
-                VStack(spacing: 10) {
-                    HStack(spacing: 10) {
-                        CharacterLabelsView(title: "Duration", value: selectedCharacter.durationLabel, icon: "clock.arrow.circlepath")
-                        CharacterLabelsView(title: "Cost", value: "\(selectedCharacter.cost * 100)", icon: "dollarsign.circle.fill")
-                    }
-                    trapPreviewBox
+            ZStack {
+                Image("board_character")
+                    .resizable()
+                    .scaledToFill()
+                    .rotationEffect(.degrees(90))
+                    .scaleEffect(0.8)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .clipped()
+                    .offset(y: -30)
+                
+                if selectedCharacter.kind == .trap {
+                    HStack(alignment: .top, spacing: 12) {
+                        trapPreviewBox
+
+                        VStack(spacing: 15) {
+                            CharacterLabelsView(title: "Cost", value: "\(selectedCharacter.cost * 100)", icon: "icon_ghost")
+                                .offset(x: -180)
+                            CharacterLabelsView(title: "Duration", value: selectedCharacter.durationLabel, icon: "icon_cooldown")
+                                .offset(y: -65)
+                        }
                         .frame(maxWidth: .infinity)
-                }
-                .frame(height: 320, alignment: .top)
-            } else {
-                HStack(alignment: .top, spacing: 12) {
-                    previewBox
-                    
-                    VStack(spacing: 9) {
-                        CharacterLabelsView(title: "Cost", value: "\(selectedCharacter.cost * 100)", icon: "dollarsign.circle.fill")
-                        CharacterLabelsView(title: "Range", value: selectedCharacter.rangeLabel, icon: "scope")
-                        CharacterLabelsView(title: "Attack Speed", value: selectedCharacter.attackSpeedLabel, icon: "speedometer")
-                        CharacterLabelsView(title: "Cooldown", value: selectedCharacter.cooldownLabel, icon: "clock.fill")
+                        .offset(y: -20)
                     }
-                    .frame(maxWidth: .infinity)
+                    .frame(height: 274, alignment: .top)
+                } else {
+                    HStack(alignment: .top, spacing: 12) {
+                        previewBox
+                        
+                        VStack(spacing: 15) {
+                            CharacterLabelsView(title: "Cost", value: "\(selectedCharacter.cost * 100)", icon: "icon_ghost")
+                            CharacterLabelsView(title: "Range", value: selectedCharacter.rangeLabel, icon: "icon_range")
+                            CharacterLabelsView(title: "Attack Speed", value: selectedCharacter.attackSpeedLabel, icon: "icon_attack")
+                            CharacterLabelsView(title: "Cooldown", value: selectedCharacter.cooldownLabel, icon: "icon_cooldown")
+                        }
+                        .frame(maxWidth: .infinity)
+                        .offset(y: -20)
+                    }
+                    .frame(height: 274, alignment: .top)
                 }
-                .frame(height: 320, alignment: .top)
             }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 12)
+            .frame(height: 300)
         }
         .padding(.horizontal, 16)
         .padding(.top, 6)
@@ -71,31 +119,23 @@ struct CharacterDetailCardView: View {
     
     private var nameCard: some View {
         VStack(spacing: 8) {
-            RibbonPlate()
-                .fill(Color.white.opacity(0.16))
-                .frame(height: 56)
-                .overlay(
-                    RibbonPlate()
-                        .stroke(Color.white.opacity(0.35), lineWidth: 4.0)
-                )
-                .overlay {
-                    Text(selectedCharacter.name.uppercased())
-                        .font(.system(size: 29, weight: .black, design: .rounded))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 18)
-                }
-            
-            RibbonPlate()
-                .fill(Color.white.opacity(0.16))
-                .frame(width: 260, height: 38)
-                .overlay(
-                    RibbonPlate()
-                        .stroke(Color.white.opacity(0.28), lineWidth: 1.0)
-                )
-                .overlay {
-                    Text(selectedCharacter.kind == .tower ? "TOWER" : "TRAP")
-                        .font(.system(size: 20, weight: .black, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.9))
+            Image("board")
+                .resizable()
+                .scaledToFit()
+                .frame(height: 144)
+                .overlay(alignment: .center) {
+                    VStack(spacing: 0) {
+                        Text(selectedCharacter.name.uppercased())
+                            .font(.custom("Newyear Coffee", size: 30))
+                            .fontWeight(.semibold)
+                            .foregroundStyle(primaryTextColor)
+                        
+                        Text(selectedCharacter.kind == .tower ? "Tower" : "Trap")
+                            .font(.custom("Montserrat", size: 17))
+                            .fontWeight(.bold)
+                            .foregroundStyle(primaryTextColor)
+                    }
+                    .offset(x: 0, y: -24)
                 }
         }
         .frame(maxWidth: .infinity)
@@ -105,12 +145,20 @@ struct CharacterDetailCardView: View {
     
     private var previewBox: some View {
         CharacterVideoPreviewView(character: selectedCharacter)
-            .frame(width: 170, height: 287)
+            .frame(width: 220, height: 360)
+            .offset(y: -80)
     }
-
+    
     private var trapPreviewBox: some View {
-        CharacterVideoPreviewView(character: selectedCharacter)
-            .frame(height: 209)
+        CharacterVideoPreviewView(
+            character: selectedCharacter,
+            rotateContentDegrees: 0,
+            overlayCounterRotationDegrees: -90
+        )
+            .frame(width: 220, height: 440)
+            .offset(x: -80, y: -112)
+            .rotationEffect(.degrees(90))
+
     }
 }
 
