@@ -7,17 +7,20 @@ import GameplayKit
 import SpriteKit
 
 final class ProjectileLauncherComponent: GKComponent {
+    let sourceGhostID: GhostID?
     let projectileSpeed: CGFloat
     let damage: CGFloat
     let aoeRadius: CGFloat?
     let color: SKColor
     let hitRadius: CGFloat
 
-    init(projectileSpeed: CGFloat,
+    init(sourceGhostID: GhostID? = nil,
+         projectileSpeed: CGFloat,
          damage: CGFloat,
          aoeRadius: CGFloat?,
          color: SKColor,
          hitRadius: CGFloat = 14) {
+        self.sourceGhostID = sourceGhostID
         self.projectileSpeed = projectileSpeed
         self.damage = damage
         self.aoeRadius = aoeRadius
