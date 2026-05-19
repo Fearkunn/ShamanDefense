@@ -33,6 +33,13 @@ struct DragPreview: View {
                     .frame(width: range * 2, height: range * 2)
                     .allowsHitTesting(false)
             }
+            Image("placing_ghost")
+                .resizable()
+                .scaledToFit()
+                .frame(width: GhostMetrics.diameter + 6, height: GhostMetrics.diameter + 6)
+                .offset(y: CharacterSprites.spriteHeight * 0.50)
+                .opacity(0.9)
+                .allowsHitTesting(false)
             Image("\(character.id.rawValue)_bottom")
                 .resizable()
                 .scaledToFit()

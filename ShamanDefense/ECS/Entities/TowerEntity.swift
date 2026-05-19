@@ -30,6 +30,7 @@ final class TowerEntity: GameEntity {
         addComponent(TargetingComponent(range: stats.range))
         addComponent(FiringComponent(fireInterval: stats.fireInterval))
         addComponent(ProjectileLauncherComponent(
+            sourceGhostID: character.id,
             projectileSpeed: stats.projectileSpeed,
             damage: stats.damage,
             aoeRadius: stats.aoeRadius,
