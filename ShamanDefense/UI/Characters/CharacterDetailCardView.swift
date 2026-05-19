@@ -49,7 +49,7 @@ struct CharacterDetailCardView: View {
                 .offset(y: -8)
             
             ZStack {
-                Image("button_character")
+                Image("button")
                     .resizable()
                     .scaledToFit()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -69,7 +69,7 @@ struct CharacterDetailCardView: View {
             .offset(y: -50)
             
             ZStack {
-                Image("board_character")
+                Image("content_background")
                     .resizable()
                     .scaledToFill()
                     .rotationEffect(.degrees(90))
