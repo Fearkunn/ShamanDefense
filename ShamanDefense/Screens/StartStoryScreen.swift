@@ -68,7 +68,7 @@ struct StartStoryScreen: View {
                 }
                 .frame(maxWidth: .infinity, minHeight: 170, maxHeight: 170, alignment: .center)
                 .background(
-                    Image(pageIndex == 0 ? "bg_story_1" : "bg_story_2")
+                    Image("button")
                         .resizable()
                         .scaledToFit()
                 )
