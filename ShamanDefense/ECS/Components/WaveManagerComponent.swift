@@ -35,4 +35,11 @@ final class WaveManagerComponent: GKComponent {
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) not implemented") }
+
+    func stop() {
+        state = .stopped
+        pendingEntries.removeAll()
+        stateTimer = 0
+        nextSpawnIn = 0
+    }
 }

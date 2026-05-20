@@ -9,8 +9,10 @@ import SpriteKit
 final class HumanEntity: GameEntity {
     static let moveSpeed: CGFloat = 100
     static let maxHp: CGFloat = 1
+    static let deathAnimationDuration: TimeInterval = 0.65
 
     let archetypeKind: HumanArchetype
+    private weak var bodySprite: SKSpriteNode?
 
     init(waypoints: [CGPoint],
          archetype: HumanArchetype = .blue,
@@ -32,6 +34,7 @@ final class HumanEntity: GameEntity {
             sprite.alpha = 0.85
         }
         root.addChild(sprite)
+        self.bodySprite = sprite
 
         addComponent(SpriteComponent(node: root))
         addComponent(TeamComponent(team: .human))
@@ -54,6 +57,40 @@ final class HumanEntity: GameEntity {
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) not implemented") }
+
+    func playDeathAnimation(completion: @escaping () -> Void) {
+        if let pf = component(ofType: PathFollowComponent.self) {
+            pf.frozen = true
+            pf.arrived = true
+        }
+        component(ofType: SpriteAnimationComponent.self)?.stopAnimating()
+
+        guard let root = component(ofType: SpriteComponent.self)?.node else {
+            completion()
+            return
+        }
+        root.removeAllActions()
+
+        let duration = Self.deathAnimationDuration
+        if let body = bodySprite {
+            let deadTexture = SKTexture(imageNamed: "human_dead")
+            body.texture = deadTexture
+            body.size = CharacterSprites.size(for: deadTexture, height: CharacterSprites.spriteHeight)
+            body.removeAllActions()
+            body.alpha = 1
+            body.setScale(1.0)
+            body.run(.group([
+                .moveBy(x: 0, y: 26, duration: duration),
+                .fadeOut(withDuration: duration),
+                .scale(to: 1.08, duration: duration)
+            ]))
+        }
+
+        root.run(.sequence([
+            .wait(forDuration: duration),
+            .run(completion)
+        ]))
+    }
 
     private static func frames(direction: String, archetype: HumanArchetype) -> [SKTexture] {
         let suffix = archetype.spriteSuffix.map { "_\($0)" } ?? ""

@@ -101,24 +101,7 @@ final class GameScene: SKScene {
         registry.add(ScoreEntity())
         buildScoreLabel()
         
-        let waveManager = WaveManagerEntity()
-        if let mgr = waveManager.component(ofType: WaveManagerComponent.self) {
-            mgr.onSpawn = { [weak self] archetype, hpMult in
-                self?.spawnHuman(archetype: archetype, hpMultiplier: hpMult)
-            }
-            mgr.onWaveStart = { [weak self] wave in
-                self?.onWaveStart?(wave)
-            }
-            mgr.onIntermission = { [weak self] nextWave in
-                self?.onIntermission?(nextWave)
-            }
-            mgr.humansAliveCount = { [weak self] in
-                self?.registry.humans.count ?? 0
-            }
-            onIntermission?(1)
-        }
-        waveManagerEntity = waveManager
-        registry.add(waveManager)
+        configureWaveManager()
     }
     
     override func update(_ currentTime: TimeInterval) {
@@ -145,8 +128,31 @@ final class GameScene: SKScene {
         }
     }
     
+    // MARK: - Wave manager
+
+    private func configureWaveManager() {
+        let waveManager = WaveManagerEntity()
+        if let mgr = waveManager.component(ofType: WaveManagerComponent.self) {
+            mgr.onSpawn = { [weak self] archetype, hpMult in
+                self?.spawnHuman(archetype: archetype, hpMultiplier: hpMult)
+            }
+            mgr.onWaveStart = { [weak self] wave in
+                self?.onWaveStart?(wave)
+            }
+            mgr.onIntermission = { [weak self] nextWave in
+                self?.onIntermission?(nextWave)
+            }
+            mgr.humansAliveCount = { [weak self] in
+                self?.registry.humans.count ?? 0
+            }
+            onIntermission?(1)
+        }
+        waveManagerEntity = waveManager
+        registry.add(waveManager)
+    }
+
     // MARK: - Spawn
-    
+
     func spawnHuman(archetype: HumanArchetype = .blue, hpMultiplier: CGFloat = 1.0) {
         guard !isGameOver, let path = registry.path else { return }
         let entity = HumanEntity(waypoints: path.waypoints,
@@ -159,47 +165,14 @@ final class GameScene: SKScene {
                 self.humanReachedFinish()
             }
         }
-        if let health = entity.component(ofType: HealthComponent.self),
-           let sprite = entity.component(ofType: SpriteComponent.self) {
+        if let health = entity.component(ofType: HealthComponent.self) {
             health.onDeath = { [weak self, weak entity] in
                 guard let self, let entity else { return }
-                
-                if let pf = entity.component(ofType: PathFollowComponent.self) {
-                    pf.frozen = true
-                    pf.arrived = true
+                entity.playDeathAnimation { [weak self, weak entity] in
+                    guard let self, let entity else { return }
+                    self.removeEntity(entity)
+                    self.humanDefeated()
                 }
-                entity.component(ofType: SpriteAnimationComponent.self)?.stopAnimating()
-                
-                let node = sprite.node
-                node.removeAllActions()
-                let deathDuration: TimeInterval = 0.65
-                
-                if let body = node.children.first(where: { $0 is SKSpriteNode }) as? SKSpriteNode {
-                    let deadTexture = SKTexture(imageNamed: "human_dead")
-                    body.texture = deadTexture
-                    body.size = CharacterSprites.size(for: deadTexture, height: CharacterSprites.spriteHeight)
-                    body.removeAllActions()
-                    body.alpha = 1
-                    body.setScale(1.0)
-                    body.run(
-                        .group([
-                            .moveBy(x: 0, y: 26, duration: deathDuration),
-                            .fadeOut(withDuration: deathDuration),
-                            .scale(to: 1.08, duration: deathDuration)
-                        ])
-                    )
-                }
-                
-                self.run(
-                    .sequence([
-                        .wait(forDuration: deathDuration),
-                        .run { [weak self, weak entity] in
-                            guard let self, let entity else { return }
-                            self.removeEntity(entity)
-                            self.humanDefeated()
-                        }
-                    ])
-                )
             }
         }
         installEntity(entity, in: humansLayer)
@@ -264,7 +237,7 @@ final class GameScene: SKScene {
         generator.notificationOccurred(.error)
         
         if let waveManager = waveManagerEntity {
-            waveManager.component(ofType: WaveManagerComponent.self)?.state = .stopped
+            waveManager.component(ofType: WaveManagerComponent.self)?.stop()
             removeEntity(waveManager)
             waveManagerEntity = nil
         }
