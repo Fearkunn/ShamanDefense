@@ -9,7 +9,6 @@ import SwiftUI
 
 struct WaveWarningBannerData: Equatable {
     let title: String
-    let subtitle: String
 }
 
 struct WaveWarningBanner: View {
@@ -19,11 +18,11 @@ struct WaveWarningBanner: View {
         ZStack {
             Image("button_character")
                 .resizable()
-                .scaledToFit()
-                .frame(width: 320)
+                .frame(height: 65)
+                .frame(width: 300)
 
-            if !data.subtitle.isEmpty {
-                Text(data.subtitle)
+            if !data.title.isEmpty {
+                Text(data.title)
                     .font(.custom("Montserrat", size: 14))
                     .fontWeight(.bold)
                     .foregroundStyle(Color(hex: "#A52525"))
@@ -35,7 +34,7 @@ struct WaveWarningBanner: View {
                 .resizable()
                 .scaledToFit()
                 .frame(width: 250)
-                .offset(y: -56)
+                .offset(y: -50)
         }
         .frame(maxWidth: 360)
     }
@@ -47,7 +46,6 @@ struct WaveWarningBanner: View {
         WaveWarningBanner(
             data: WaveWarningBannerData(
                 title: "WAVE 3 INCOMING...",
-                subtitle: "A wave of human is approaching.."
             )
         )
     }
