@@ -39,6 +39,7 @@ final class GameScene: SKScene {
     var onRetry: (() -> Void)?
     var onMainMenu: (() -> Void)?
     var onGameOver: ((_ score: Int, _ highScore: Int, _ isFirstPlay: Bool) -> Void)?
+    var onSpiritChanged: ((Int) -> Void)?
 
     private var currentSpirit: Int = 10
     private var hasPlayedWaveSpawnSound = false
@@ -699,6 +700,7 @@ final class GameScene: SKScene {
 
     func updateSpirit(_ value: Int) {
         shamanHUD?.updateSpirit(value)
+        onSpiritChanged?(value)
     }
     
     private func addSpirit(_ amount: Int) {

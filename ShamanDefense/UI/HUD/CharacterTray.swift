@@ -9,6 +9,7 @@ import SwiftUI
 
 struct CharacterTray: View {
     @Binding var selected: CharacterData?
+    var currentSpirit: Int = .max
     var coordSpace: String = "game"
     var onDragChanged: (CharacterData, CGPoint) -> Void = { _, _ in }
     var onDragEnded: (CharacterData, CGPoint) -> Bool = { _, _ in false }
@@ -20,14 +21,16 @@ struct CharacterTray: View {
             ForEach(GameCollection.allCharacters) { character in
                 let cooldownEndDate = cooldownEndDates[character.id]
                 let isSelected = selected?.id == character.id
+                let canAfford = currentSpirit >= character.cost
+                let isOnCooldown = cooldownEndDate.map { Date() < $0 } ?? false
+                let isDisabled = !canAfford || isOnCooldown
 
                 CharacterCardUI(
                     character: character,
                     cooldownEndDate: cooldownEndDate,
                     onTap: {
-                        let isExpired = cooldownEndDate.map { Date() >= $0 } ?? true
-                        guard isExpired else { return }
-                        
+                        guard !isDisabled else { return }
+
                         if selected?.id == character.id {
                             selected = nil
                         } else {
@@ -37,20 +40,22 @@ struct CharacterTray: View {
                 )
                 .frame(maxWidth: .infinity)
                 .offset(y: isSelected ? -14 : 0)
+                .opacity(canAfford ? 1.0 : 0.45)
+                .grayscale(canAfford ? 0 : 0.85)
                 .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isSelected)
+                .animation(.easeInOut(duration: 0.15), value: canAfford)
+                .allowsHitTesting(!isDisabled)
                 .gesture(
                     DragGesture(minimumDistance: 4, coordinateSpace: .named(coordSpace))
                         .onChanged { value in
-                            let isExpired = cooldownEndDates[character.id].map { Date() >= $0 } ?? true
-                            guard isExpired else { return }
-                            
+                            guard !isDisabled else { return }
+
                             selected = character
                             onDragChanged(character, value.location)
                         }
                         .onEnded { value in
-                            let isExpired = cooldownEndDates[character.id].map { Date() >= $0 } ?? true
-                            guard isExpired else { return }
-                            
+                            guard !isDisabled else { return }
+
                             let placed = onDragEnded(character, value.location)
                             if placed {
                                 cooldownEndDates[character.id] = Date().addingTimeInterval(character.cooldownDuration)

@@ -24,6 +24,7 @@ struct GameScreen: View {
     @State private var waveWarning: WaveWarningBannerData? = nil
     @State private var isPaused = false
     @State private var gameOver: GameOverOverlayData? = nil
+    @State private var currentSpirit: Int = 10
 
     var body: some View {
         GeometryReader { geo in
@@ -38,6 +39,7 @@ struct GameScreen: View {
                     Spacer()
                     CharacterTray(
                         selected: $selected,
+                        currentSpirit: currentSpirit,
                         coordSpace: gameCoordSpace,
                         onDragChanged: { character, location in
                             dragging = (character, location)
@@ -143,6 +145,9 @@ struct GameScreen: View {
             waveWarning = nil
             isPaused = false
             gameOver = nil
+        }
+        scene.onSpiritChanged = { value in
+            currentSpirit = value
         }
         scene.onGameOver = { score, high, isFirst in
             withAnimation(.easeInOut(duration: 0.22)) {
