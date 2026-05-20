@@ -32,7 +32,7 @@ struct ContentView: View {
     var body: some View {
         Group {
             switch screen {
-
+                
             case .mainMenu:
                 GeometryReader { geo in
                     SpriteView(scene: menuScene)
@@ -47,18 +47,18 @@ struct ContentView: View {
                         }
                 }
                 .ignoresSafeArea()
-
+                
             case .story:
                 StartStoryScreen {
                     screen = .game
                 }
-
+                
             case .game:
                 GameScreen(onMainMenu: {
+                    menuScene.updateScoreBoard()
                     screen = .mainMenu
                 })
             }
-            
         }
         .animation(.easeInOut(duration: 0.4), value: screen)
     }

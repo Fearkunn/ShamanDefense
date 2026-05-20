@@ -10,17 +10,17 @@ import SpriteKit
 
 // MARK: - Delegate
 
-protocol OptionPopupDelegate: AnyObject {
-    func optionPopupDidRequestClose(_ popup: OptionPopupNode)
+protocol OptionScenePopupDelegate: AnyObject {
+    func optionPopupDidRequestClose(_ popup: OptionScenePopupNode)
 }
 
-// MARK: - OptionPopupNode
+// MARK: - OptionScenePopupNode
 
-class OptionPopupNode: SKNode {
+class OptionScenePopupNode: SKNode {
 
     // MARK: - Properties
 
-    weak var delegate: OptionPopupDelegate?
+    weak var delegate: OptionScenePopupDelegate?
 
     private let optionViewModel: OptionViewModel
     private let sceneSize: CGSize
@@ -235,16 +235,19 @@ class OptionPopupNode: SKNode {
 }
 
 #Preview {
-    let scene = SKScene(size: CGSize(width: 390, height: 844))
-    scene.scaleMode = .aspectFill
-    scene.backgroundColor = .clear
+    let scene: SKScene = {
+        let scene = SKScene(size: CGSize(width: 390, height: 844))
+        scene.scaleMode = .aspectFill
+        scene.backgroundColor = .clear
 
-    let popup = OptionPopupNode(
-        viewModel: OptionViewModel(),
-        sceneSize: scene.size
-    )
-    scene.addChild(popup)
+        let popup = OptionScenePopupNode(
+            viewModel: OptionViewModel.shared,
+            sceneSize: scene.size
+        )
+        scene.addChild(popup)
+        return scene
+    }()
 
-    return SpriteView(scene: scene)
+    SpriteView(scene: scene)
         .ignoresSafeArea()
 }

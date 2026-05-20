@@ -15,7 +15,6 @@ class MainMenuScene: SKScene {
     /// Di-set oleh ContentView. Dipanggil saat user tap Start.
     var onStartGame: (() -> Void)?
 
-    private let optionViewModel = OptionViewModel()
     private var optionPopup: OptionPopupNode?
 
     // MARK: - Lifecycle
@@ -63,68 +62,115 @@ class MainMenuScene: SKScene {
     // MARK: - Score Board
 
     private func setupScoreBoard() {
+
+        // Hapus scoreboard lama jika ada
+        childNode(withName: "score_board")?.removeFromParent()
+
         let board = SKSpriteNode(imageNamed: "score_board")
+
         board.name = "score_board"
-        board.position = CGPoint(x: size.width / 1.7, y: size.height * 0.68)
+
+        board.anchorPoint = CGPoint(x: 0.5, y: 0.9)
+
+        board.position = CGPoint(
+            x: size.width / 1.7,
+            y: size.height * 0.68 + 50
+        )
+
         board.size = CGSize(width: 166, height: 132)
+
         board.zRotation = -0.15
         board.zPosition = 1
+
         addChild(board)
 
         let highScoreLabel = SKLabelNode(fontNamed: "Newyear Coffee")
-        highScoreLabel.text = "High Score:"
+
+        highScoreLabel.text = "HIGH SCORE:"
         highScoreLabel.fontSize = 10
-        highScoreLabel.fontColor = SKColor(red: 75/255, green: 75/255, blue: 75/255, alpha: 1)
-        highScoreLabel.position = CGPoint(x: 20, y: -30)
+
+        highScoreLabel.fontColor = SKColor(
+            red: 75/255,
+            green: 75/255,
+            blue: 75/255,
+            alpha: 1
+        )
+
+        highScoreLabel.position = CGPoint(x: 20, y: -77)
+
         board.addChild(highScoreLabel)
 
         let scoreLabel = SKLabelNode(fontNamed: "Newyear Coffee")
+
         scoreLabel.name = "score_label"
         scoreLabel.fontSize = 30
-        scoreLabel.fontColor = SKColor(red: 75/255, green: 75/255, blue: 75/255, alpha: 1)
-        scoreLabel.position = CGPoint(x: 20, y: -55)
+
+        scoreLabel.fontColor = SKColor(
+            red: 75/255,
+            green: 75/255,
+            blue: 75/255,
+            alpha: 1
+        )
+
+        scoreLabel.position = CGPoint(x: 20, y: -105)
+
         board.addChild(scoreLabel)
 
         updateScoreBoard()
     }
+    
+    func updateScoreBoard() {
 
-    private func updateScoreBoard() {
         guard let board = childNode(withName: "score_board") as? SKSpriteNode else { return }
+
         guard let scoreLabel = board.childNode(withName: "score_label") as? SKLabelNode else { return }
 
-        if ScoreManager.shared.hasPlayed {
-            board.isHidden = false
-            scoreLabel.text = String(format: "%04d", ScoreManager.shared.highScore)
-            startWobbleAnimation(on: board)
-        } else {
-            board.isHidden = true
-            board.removeAllActions()
-        }
-    }
+        let hasPlayed = UserDefaults.standard.bool(
+            forKey: "ShamanDefense_HasPlayed"
+        )
 
-    // MARK: - Wobble Animation
+        let score = hasPlayed
+            ? UserDefaults.standard.integer(
+                forKey: "ShamanDefense_HighScore"
+            )
+            : 0
+
+        scoreLabel.text = "\(score)"
+
+        startWobbleAnimation(on: board)
+    }
+    // MARK: - Animation
 
     private func startWobbleAnimation(on node: SKSpriteNode) {
-        let baseRotation: CGFloat  = -0.15
-        let swing: CGFloat         = 0.08
-        let duration: TimeInterval = 0.55
 
-        let tiltLeft = SKAction.rotate(toAngle: baseRotation - swing, duration: duration)
-        tiltLeft.timingMode = .easeInEaseOut
+        if node.action(forKey: "Animation") != nil {
+            return
+        }
 
-        let tiltRight = SKAction.rotate(toAngle: baseRotation + swing, duration: duration)
-        tiltRight.timingMode = .easeInEaseOut
+        let swingLeft = SKAction.rotate(
+            toAngle: -0.22,
+            duration: 1.0
+        )
 
-        let center = SKAction.rotate(toAngle: baseRotation, duration: duration * 0.5)
-        center.timingMode = .easeInEaseOut
+        swingLeft.timingMode = .easeInEaseOut
 
-        let pause = SKAction.wait(forDuration: 1.2)
-        let cycle = SKAction.sequence([tiltLeft, tiltRight, center, pause])
+        let swingRight = SKAction.rotate(
+            toAngle: 0.22,
+            duration: 1.0
+        )
 
-        node.removeAllActions()
-        node.run(SKAction.repeatForever(cycle), withKey: "wobble")
+        swingRight.timingMode = .easeInEaseOut
+
+        let sequence = SKAction.sequence([
+            swingLeft,
+            swingRight
+        ])
+
+        node.run(
+            SKAction.repeatForever(sequence),
+            withKey: "wobble"
+        )
     }
-
     // MARK: - Start Button
 
     private func setupStartButton() {
@@ -187,7 +233,7 @@ class MainMenuScene: SKScene {
     // MARK: - Option Popup
 
     private func showOptionPopup() {
-        let popup = OptionPopupNode(viewModel: optionViewModel, sceneSize: size)
+        let popup = OptionPopupNode(sceneSize: size)
         popup.delegate = self
         popup.zPosition = 99
         addChild(popup)

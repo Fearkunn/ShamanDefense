@@ -63,7 +63,7 @@ struct GameScreen: View {
                             scene.pauseComponent?.isPaused = false
                         },
                         onMainMenu: {
-                            // TODO: navigate to main menu
+                            onMainMenu?()// TODO: navigate to main menu
                         }
                     )
                 }
