@@ -15,7 +15,7 @@ final class GameScene: SKScene {
     private let spriteTileMultiplier: CGFloat = 3
     private var tileSize: CGFloat = 36
     private let minPlacementSpacing: CGFloat = GhostMetrics.diameter
-
+    
     private(set) var registry: EntityRegistry
     var pauseComponent: PauseComponent? { registry.pause }
     private var lastUpdateTime: TimeInterval = 0
@@ -42,6 +42,8 @@ final class GameScene: SKScene {
     private var currentSpirit: Int = 6
 
     override init() {
+        let heartbeatSystem = HeartbeatSystem()
+        
         registry = EntityRegistry(systems: [
             EffectsSystem(),
             PathFollowSystem(),
@@ -52,14 +54,16 @@ final class GameScene: SKScene {
             PathRunnerSystem(),
             SlowAuraSystem(),
             StateMachineSystem(),
+            heartbeatSystem
         ])
         registry.add(GameStateEntity())
         super.init(size: .zero)
+        heartbeatSystem.scene = self
     }
-
+    
     required init?(coder: NSCoder) { fatalError("init(coder:) not implemented") }
-
-
+    
+    
     private func tooCloseToExisting(_ point: CGPoint) -> Bool {
         for entity in registry.all {
             guard let blocker = entity.component(ofType: PlacementBlockerComponent.self),
@@ -90,7 +94,7 @@ final class GameScene: SKScene {
         addChild(projectilesLayer)
         addChild(fxLayer)
         addChild(hudLayer)
-
+        
         loadMap()
         setupMapUI()
         updateSpirit(currentSpirit)
@@ -141,7 +145,7 @@ final class GameScene: SKScene {
         }
     }
     
-    // MARK: - Spawn / install
+    // MARK: - Spawn
     
     func spawnHuman(archetype: HumanArchetype = .blue, hpMultiplier: CGFloat = 1.0) {
         guard !isGameOver, let path = registry.path else { return }
@@ -159,11 +163,43 @@ final class GameScene: SKScene {
            let sprite = entity.component(ofType: SpriteComponent.self) {
             health.onDeath = { [weak self, weak entity] in
                 guard let self, let entity else { return }
+                
+                if let pf = entity.component(ofType: PathFollowComponent.self) {
+                    pf.frozen = true
+                    pf.arrived = true
+                }
+                entity.component(ofType: SpriteAnimationComponent.self)?.stopAnimating()
+                
                 let node = sprite.node
                 node.removeAllActions()
-                node.run(.sequence([.fadeOut(withDuration: 0.15), .removeFromParent()]))
-                self.removeEntity(entity)
-                self.humanDefeated()
+                let deathDuration: TimeInterval = 0.65
+                
+                if let body = node.children.first(where: { $0 is SKSpriteNode }) as? SKSpriteNode {
+                    let deadTexture = SKTexture(imageNamed: "human_dead")
+                    body.texture = deadTexture
+                    body.size = CharacterSprites.size(for: deadTexture, height: CharacterSprites.spriteHeight)
+                    body.removeAllActions()
+                    body.alpha = 1
+                    body.setScale(1.0)
+                    body.run(
+                        .group([
+                            .moveBy(x: 0, y: 26, duration: deathDuration),
+                            .fadeOut(withDuration: deathDuration),
+                            .scale(to: 1.08, duration: deathDuration)
+                        ])
+                    )
+                }
+                
+                self.run(
+                    .sequence([
+                        .wait(forDuration: deathDuration),
+                        .run { [weak self, weak entity] in
+                            guard let self, let entity else { return }
+                            self.removeEntity(entity)
+                            self.humanDefeated()
+                        }
+                    ])
+                )
             }
         }
         installEntity(entity, in: humansLayer)
@@ -275,6 +311,96 @@ final class GameScene: SKScene {
     func spawnProjectile(from origin: CGPoint,
                          target: GameEntity,
                          launcher: ProjectileLauncherComponent) {
+        if launcher.sourceGhostID == .keti {
+            guard let targetSprite = target.component(ofType: SpriteComponent.self),
+                  let health = target.component(ofType: HealthComponent.self),
+                  health.isAlive else { return }
+            let targetPos = targetSprite.position
+            let dx = targetPos.x - origin.x
+            let dy = targetPos.y - origin.y
+            let dist = max(hypot(dx, dy), 1)
+            let dirX = dx / dist
+            let dirY = dy / dist
+            
+            // Serangan Keti's Effect
+            let mouthForward: CGFloat = CharacterSprites.spriteHeight * 0.62
+            let mouthOrigin = CGPoint(
+                x: origin.x + dirX * mouthForward,
+                y: origin.y + dirY * mouthForward
+            )
+            let waveDuration: TimeInterval = 0.60
+            let hitDelay: TimeInterval = 0.28
+            for delay in [0.0, 0.05] {
+                let wave = SKSpriteNode(imageNamed: "keti_effect")
+                wave.size = CGSize(width: 24, height: 24)
+                wave.position = mouthOrigin
+                wave.zPosition = 12
+                wave.alpha = 0.95
+                wave.zRotation = atan2(dirY, dirX) + .pi
+                fxLayer.addChild(wave)
+                wave.run(.sequence([
+                    .wait(forDuration: delay),
+                    .group([
+                        .move(to: targetPos, duration: waveDuration),
+                        .scale(to: 1.45, duration: waveDuration),
+                        .fadeOut(withDuration: waveDuration)
+                    ]),
+                    .removeFromParent()
+                ]))
+            }
+            
+            self.run(.sequence([
+                .wait(forDuration: hitDelay),
+                .run { [weak self, weak target, weak health] in
+                    guard let self else { return }
+                    if let aoe = launcher.aoeRadius {
+                        self.applyAoEDamage(at: targetPos, radius: aoe, amount: launcher.damage, color: launcher.color)
+                    } else if let health,
+                              health.isAlive,
+                              target?.component(ofType: SpriteComponent.self)?.node.parent != nil {
+                        health.takeDamage(launcher.damage)
+                    }
+                }
+            ]))
+            return
+        }
+        
+        // Serangan Poci's Headbutt
+        if launcher.sourceGhostID == .poci {
+            guard let targetSprite = target.component(ofType: SpriteComponent.self),
+                  let health = target.component(ofType: HealthComponent.self),
+                  health.isAlive else { return }
+            
+            let hit = SKSpriteNode(imageNamed: "poci_headbutt")
+            hit.size = CGSize(width: 34, height: 34)
+            hit.position = targetSprite.position
+            hit.zPosition = 12
+            hit.alpha = 1.0
+            hit.setScale(0.75)
+            fxLayer.addChild(hit)
+            hit.run(.sequence([
+                .group([
+                    .moveBy(x: 0, y: 10, duration: 0.12),
+                    .scale(to: 1.15, duration: 0.12),
+                    .fadeAlpha(to: 0.85, duration: 0.12)
+                ]),
+                .group([
+                    .moveBy(x: 0, y: 10, duration: 0.12),
+                    .scale(to: 1.28, duration: 0.12),
+                    .fadeOut(withDuration: 0.12)
+                ]),
+                .removeFromParent()
+            ]))
+            
+            if let aoe = launcher.aoeRadius {
+                applyAoEDamage(at: targetSprite.position, radius: aoe, amount: launcher.damage, color: launcher.color)
+            } else {
+                health.takeDamage(launcher.damage)
+                playHeadbuttHitReaction(on: target)
+            }
+            return
+        }
+        
         let entity = ProjectileEntity(from: origin, target: target, launcher: launcher)
         
         if let homing = entity.component(ofType: HomingComponent.self) {
@@ -286,6 +412,9 @@ final class GameScene: SKScene {
                     } else if let target,
                               let health = target.component(ofType: HealthComponent.self) {
                         health.takeDamage(damage.damage)
+                        if damage.sourceGhostID == .poci {
+                            self.playHeadbuttHitReaction(on: target)
+                        }
                     }
                 }
                 self.removeEntity(entity)
@@ -324,6 +453,30 @@ final class GameScene: SKScene {
                 health.takeDamage(amount)
             }
         }
+    }
+    
+    private func playHeadbuttHitReaction(on target: GameEntity) {
+        guard let root = target.component(ofType: SpriteComponent.self)?.node,
+              let body = root.children.first(where: { $0 is SKSpriteNode }) as? SKSpriteNode else { return }
+        body.removeAction(forKey: "headbutt_hit")
+        body.run(
+            .sequence([
+                .group([
+                    .moveBy(x: 5, y: 1, duration: 0.05),
+                    .rotate(byAngle: .pi / 18, duration: 0.05)
+                ]),
+                .group([
+                    .moveBy(x: -7, y: -1, duration: 0.06),
+                    .rotate(byAngle: -.pi / 12, duration: 0.06)
+                ]),
+                .group([
+                    .moveTo(x: 0, duration: 0.04),
+                    .moveTo(y: 0, duration: 0.04),
+                    .rotate(toAngle: 0, duration: 0.04)
+                ])
+            ]),
+            withKey: "headbutt_hit"
+        )
     }
     
     func installEntity(_ entity: GameEntity, in layer: SKNode) {

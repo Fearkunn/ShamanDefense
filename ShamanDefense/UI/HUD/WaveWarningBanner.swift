@@ -16,7 +16,7 @@ struct WaveWarningBanner: View {
     
     var body: some View {
         ZStack {
-            Image("button_character")
+            Image("button")
                 .resizable()
                 .frame(height: 65)
                 .frame(width: 300)
