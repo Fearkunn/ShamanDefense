@@ -36,6 +36,8 @@ final class GameScene: SKScene {
     
     private var currentSpirit: Int = 10
     
+    var onGoToMainMenu: (() -> Void)?
+
     override init() {
         registry = EntityRegistry(systems: [
             EffectsSystem(),
@@ -265,6 +267,20 @@ final class GameScene: SKScene {
     }
     
     private func goToMainMenu() {
+        guard let view else { return }
+        
+        print("Children before cleanup: \(children.count)")
+        children.forEach { print($0.name ?? "unnamed", $0) }
+        
+        removeAllActions()
+        removeAllChildren()
+        registry.removeAll()
+        
+        print("Children after cleanup: \(children.count)")
+        
+        let menuScene = MainMenuScene(size: size)
+        menuScene.scaleMode = .aspectFill
+        view.presentScene(menuScene, transition: .fade(withDuration: 0.4))
     }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {

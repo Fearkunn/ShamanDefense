@@ -22,7 +22,8 @@ struct GameScreen: View {
     @State private var dragging: (character: CharacterData, location: CGPoint)? = nil
     @State private var waveWarning: WaveWarningBannerData? = nil
     @State private var isPaused = false
-
+    var onMainMenu: (() -> Void)? = nil
+    
     var body: some View {
         GeometryReader { geo in
             let dropZoneHeight = geo.size.height - trayHeight
@@ -31,7 +32,9 @@ struct GameScreen: View {
                 SpriteView(scene: scene, debugOptions: [.showsFPS, .showsPhysics, .showsNodeCount])
                     .frame(width: geo.size.width, height: geo.size.height)
                     .ignoresSafeArea()
-
+                    .onAppear {
+                                scene.onGoToMainMenu = onMainMenu  // sambungkan di sini
+                            }
                 VStack {
                     Spacer()
                     CharacterTray(
