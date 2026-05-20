@@ -281,96 +281,19 @@ final class GameScene: SKScene {
         installEntity(entity, in: towersLayer)
     }
     
-    func spawnProjectile(from origin: CGPoint,
+    func spawnProjectile(source: GameEntity,
+                         from origin: CGPoint,
                          target: GameEntity,
-                         launcher: ProjectileLauncherComponent) {
-        if launcher.sourceGhostID == .keti {
-            guard let targetSprite = target.component(ofType: SpriteComponent.self),
-                  let health = target.component(ofType: HealthComponent.self),
-                  health.isAlive else { return }
-            let targetPos = targetSprite.position
-            let dx = targetPos.x - origin.x
-            let dy = targetPos.y - origin.y
-            let dist = max(hypot(dx, dy), 1)
-            let dirX = dx / dist
-            let dirY = dy / dist
-            
-            // Serangan Keti's Effect
-            let mouthForward: CGFloat = CharacterSprites.spriteHeight * 0.62
-            let mouthOrigin = CGPoint(
-                x: origin.x + dirX * mouthForward,
-                y: origin.y + dirY * mouthForward
-            )
-            let waveDuration: TimeInterval = 0.60
-            let hitDelay: TimeInterval = 0.28
-            for delay in [0.0, 0.05] {
-                let wave = SKSpriteNode(imageNamed: "keti_effect")
-                wave.size = CGSize(width: 24, height: 24)
-                wave.position = mouthOrigin
-                wave.zPosition = 12
-                wave.alpha = 0.95
-                wave.zRotation = atan2(dirY, dirX) + .pi
-                fxLayer.addChild(wave)
-                wave.run(.sequence([
-                    .wait(forDuration: delay),
-                    .group([
-                        .move(to: targetPos, duration: waveDuration),
-                        .scale(to: 1.45, duration: waveDuration),
-                        .fadeOut(withDuration: waveDuration)
-                    ]),
-                    .removeFromParent()
-                ]))
-            }
-            
-            self.run(.sequence([
-                .wait(forDuration: hitDelay),
-                .run { [weak self, weak target, weak health] in
-                    guard let self else { return }
-                    if let aoe = launcher.aoeRadius {
-                        self.applyAoEDamage(at: targetPos, radius: aoe, amount: launcher.damage, color: launcher.color)
-                    } else if let health,
-                              health.isAlive,
-                              target?.component(ofType: SpriteComponent.self)?.node.parent != nil {
-                        health.takeDamage(launcher.damage)
-                    }
-                }
-            ]))
-            return
-        }
-        
-        // Serangan Poci's Headbutt
-        if launcher.sourceGhostID == .poci {
-            guard let targetSprite = target.component(ofType: SpriteComponent.self),
-                  let health = target.component(ofType: HealthComponent.self),
-                  health.isAlive else { return }
-            
-            let hit = SKSpriteNode(imageNamed: "poci_headbutt")
-            hit.size = CGSize(width: 34, height: 34)
-            hit.position = targetSprite.position
-            hit.zPosition = 12
-            hit.alpha = 1.0
-            hit.setScale(0.75)
-            fxLayer.addChild(hit)
-            hit.run(.sequence([
-                .group([
-                    .moveBy(x: 0, y: 10, duration: 0.12),
-                    .scale(to: 1.15, duration: 0.12),
-                    .fadeAlpha(to: 0.85, duration: 0.12)
-                ]),
-                .group([
-                    .moveBy(x: 0, y: 10, duration: 0.12),
-                    .scale(to: 1.28, duration: 0.12),
-                    .fadeOut(withDuration: 0.12)
-                ]),
-                .removeFromParent()
-            ]))
-            
-            if let aoe = launcher.aoeRadius {
-                applyAoEDamage(at: targetSprite.position, radius: aoe, amount: launcher.damage, color: launcher.color)
-            } else {
-                health.takeDamage(launcher.damage)
-                playHeadbuttHitReaction(on: target)
-            }
+                         launcher: ProjectileLauncherComponent,
+                         style: GhostAttackStyle = .projectile) {
+        let context = GhostAttackContext(
+            scene: self,
+            source: source,
+            origin: origin,
+            target: target,
+            launcher: launcher
+        )
+        if GhostAttackDispatcher.executeSpecialIfNeeded(style: style, context: context) {
             return
         }
         
@@ -408,17 +331,23 @@ final class GameScene: SKScene {
     }
     
     func applyAoEDamage(at point: CGPoint, radius: CGFloat, amount: CGFloat, color: SKColor) {
-        let flash = SKShapeNode(circleOfRadius: radius)
-        flash.position = point
-        flash.fillColor = color.withAlphaComponent(0.35)
-        flash.strokeColor = color
-        flash.lineWidth = 2
-        fxLayer.addChild(flash)
-        flash.run(.sequence([
-            .group([.fadeOut(withDuration: 0.25), .scale(to: 1.2, duration: 0.25)]),
-            .removeFromParent()
-        ]))
-        
+        applyAoEDamage(at: point, radius: radius, amount: amount, color: color, showsFlash: true)
+    }
+
+    func applyAoEDamage(at point: CGPoint, radius: CGFloat, amount: CGFloat, color: SKColor, showsFlash: Bool) {
+        if showsFlash {
+            let flash = SKShapeNode(circleOfRadius: radius)
+            flash.position = point
+            flash.fillColor = color.withAlphaComponent(0.35)
+            flash.strokeColor = color
+            flash.lineWidth = 2
+            fxLayer.addChild(flash)
+            flash.run(.sequence([
+                .group([.fadeOut(withDuration: 0.25), .scale(to: 1.2, duration: 0.25)]),
+                .removeFromParent()
+            ]))
+        }
+
         for human in registry.humans {
             guard let pos = human.component(ofType: SpriteComponent.self)?.position,
                   let health = human.component(ofType: HealthComponent.self), health.isAlive else { continue }
@@ -428,7 +357,7 @@ final class GameScene: SKScene {
         }
     }
     
-    private func playHeadbuttHitReaction(on target: GameEntity) {
+    func playHeadbuttHitReaction(on target: GameEntity) {
         guard let root = target.component(ofType: SpriteComponent.self)?.node,
               let body = root.children.first(where: { $0 is SKSpriteNode }) as? SKSpriteNode else { return }
         body.removeAction(forKey: "headbutt_hit")
@@ -601,6 +530,66 @@ final class GameScene: SKScene {
             }
         }
         installEntity(entity, in: trapsLayer)
+
+        if character.id == .yayang {
+            playYayangPlacementSequence(entity)
+        }
+    }
+
+    private func playYayangPlacementSequence(_ entity: TrapEntity) {
+        guard let root = entity.component(ofType: SpriteComponent.self)?.node,
+              let trigger = entity.component(ofType: ProximityTriggerComponent.self),
+              let stateMachine = entity.component(ofType: StateMachineComponent.self) else { return }
+
+        trigger.armed = false
+        root.removeAction(forKey: "yayang_placement_sequence")
+        let originalZPosition = root.zPosition
+        let worldPosition = root.parent?.convert(root.position, to: self) ?? root.position
+        root.removeFromParent()
+        root.position = hudLayer.convert(worldPosition, from: self)
+        root.zPosition = 60
+        hudLayer.addChild(root)
+
+        let dimOverlay = SKShapeNode(rectOf: size)
+        dimOverlay.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        dimOverlay.fillColor = .black
+        dimOverlay.strokeColor = .clear
+        dimOverlay.alpha = 0
+        dimOverlay.zPosition = 49
+        hudLayer.addChild(dimOverlay)
+        dimOverlay.run(.fadeAlpha(to: 0.35, duration: 0.25))
+
+        let centerPoint = CGPoint(x: size.width / 2, y: size.height / 2)
+        let sequence = SKAction.sequence([
+            .wait(forDuration: 0.70),
+            .group([
+                .move(to: centerPoint, duration: 0.45),
+                .scale(to: 1.35, duration: 0.45)
+            ]),
+            .wait(forDuration: 0.10),
+            .run { [weak self, weak stateMachine, weak dimOverlay, weak root] in
+                stateMachine?.stateMachine.enter(YayangTriggeredState.self)
+                self?.run(.sequence([
+                    .wait(forDuration: 0.05),
+                    .run { [weak self] in
+                        guard let self else { return }
+                        root?.zPosition = originalZPosition
+                        if let root,
+                           let worldBack = root.parent?.convert(root.position, to: self) {
+                            root.removeFromParent()
+                            root.position = self.trapsLayer.convert(worldBack, from: self)
+                            self.trapsLayer.addChild(root)
+                        }
+                        dimOverlay?.run(.sequence([
+                            .fadeOut(withDuration: 0.35),
+                            .removeFromParent()
+                        ]))
+                    }
+                ]))
+            }
+        ])
+        sequence.timingMode = .easeInEaseOut
+        root.run(sequence, withKey: "yayang_placement_sequence")
     }
     
     private func setupMapUI() {
