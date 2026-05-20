@@ -267,22 +267,15 @@ final class GameScene: SKScene {
     }
     
     private func goToMainMenu() {
-        guard let view else { return }
-        
-        print("Children before cleanup: \(children.count)")
-        children.forEach { print($0.name ?? "unnamed", $0) }
-        
         removeAllActions()
         removeAllChildren()
         registry.removeAll()
         
-        print("Children after cleanup: \(children.count)")
-        
-        let menuScene = MainMenuScene(size: size)
-        menuScene.scaleMode = .aspectFill
-        view.presentScene(menuScene, transition: .fade(withDuration: 0.4))
+        DispatchQueue.main.async { [weak self] in
+            self?.onGoToMainMenu?()
+        }
     }
-    
+
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
         let loc = touch.location(in: self)
