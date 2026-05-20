@@ -493,17 +493,20 @@ final class GameScene: SKScene {
         }
     }
     
-    func place(_ character: CharacterData, at scenePoint: CGPoint) {
-        guard canPlace(character, at: scenePoint) else { return }
+    @discardableResult
+    func place(_ character: CharacterData, at scenePoint: CGPoint) -> Bool {
+        guard canPlace(character, at: scenePoint) else { return false }
         
         guard spendSpirit(character.cost) else {
-            return
+            return false
         }
         
         switch character.kind {
         case .tower: spawnTower(character, at: scenePoint)
         case .trap:  spawnTrap(character, at: scenePoint)
         }
+        
+        return true
     }
     
     // MARK: - Map loading

@@ -42,13 +42,13 @@ struct GameScreen: View {
                         },
                         onDragEnded: { character, location in
                             dragging = nil
-                            guard location.y < dropZoneHeight else { return }
+                            guard location.y < dropZoneHeight else { return false }
                             let liftedY = location.y - dragLift
                             let scenePoint = CGPoint(
                                 x: location.x,
                                 y: geo.size.height - liftedY
                             )
-                            scene.place(character, at: scenePoint)
+                            return scene.place(character, at: scenePoint)
                         }
                     ).padding(.bottom, 30).padding(.horizontal, 10)
                 }
