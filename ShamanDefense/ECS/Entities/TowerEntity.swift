@@ -21,6 +21,19 @@ final class TowerEntity: GameEntity {
         let texture = CharacterSprites.texture(for: character.id, facing: .down)
         let sprite = SKSpriteNode(texture: texture, size: CharacterSprites.size(for: texture))
         let root = SKNode()
+        let aura = SKShapeNode(
+            ellipseOf: CGSize(
+                width: GhostMetrics.diameter + 6,
+                height: (GhostMetrics.diameter + 6) * 0.38
+            )
+        )
+        aura.fillColor = .black
+        aura.strokeColor = .clear
+        aura.alpha = 0.20
+        aura.position = CGPoint(x: 0, y: -CharacterSprites.spriteHeight * 0.70)
+        aura.zPosition = 0
+        sprite.zPosition = 1
+        root.addChild(aura)
         root.addChild(sprite)
 
         addComponent(SpriteComponent(node: root))
@@ -29,6 +42,18 @@ final class TowerEntity: GameEntity {
         addComponent(PlacementBlockerComponent(radius: GhostMetrics.diameter / 2))
         addComponent(TargetingComponent(range: stats.range))
         addComponent(FiringComponent(fireInterval: stats.fireInterval))
+        let attackStyle: GhostAttackStyle
+        switch character.id {
+        case .poci:
+            attackStyle = .pociHeadbutt
+        case .keti:
+            attackStyle = .ketiScream
+        case .gugun:
+            attackStyle = .gugunJump
+        default:
+            attackStyle = .projectile
+        }
+        addComponent(GhostAttackProfileComponent(style: attackStyle))
         addComponent(ProjectileLauncherComponent(
             sourceGhostID: character.id,
             projectileSpeed: stats.projectileSpeed,

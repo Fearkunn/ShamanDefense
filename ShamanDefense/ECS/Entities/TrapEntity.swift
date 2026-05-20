@@ -20,8 +20,8 @@ final class TrapEntity: GameEntity {
         let texture = CharacterSprites.texture(for: character.id, facing: .down)
         let sprite = SKSpriteNode(texture: texture, size: CharacterSprites.size(for: texture))
         let root = SKNode()
+        sprite.zPosition = 1
         root.addChild(sprite)
-
         addComponent(SpriteComponent(node: root))
         addComponent(DirectionalSpriteComponent(sprite: sprite, id: character.id))
         addComponent(TeamComponent(team: .ghost))

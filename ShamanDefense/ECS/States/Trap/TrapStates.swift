@@ -44,15 +44,35 @@ final class YayangTriggeredState: TrapTriggeredState {
               let scene = sprite.node.scene as? GameScene,
               let aura = entity.component(ofType: FreezeAuraComponent.self) else { return }
 
+        let fullscreenRadius = hypot(scene.size.width, scene.size.height) * 0.65
+
         let pulse = SKShapeNode(circleOfRadius: 40)
         pulse.position = sprite.position
-        pulse.fillColor = SKColor.cyan.withAlphaComponent(0.25)
-        pulse.strokeColor = .cyan
-        pulse.lineWidth = 2
+        pulse.fillColor = SKColor.cyan.withAlphaComponent(0.30)
+        pulse.strokeColor = SKColor.cyan.withAlphaComponent(0.90)
+        pulse.lineWidth = 3
         pulse.zPosition = 4
         scene.fxLayer.addChild(pulse)
+
+        let innerPulse = SKShapeNode(circleOfRadius: 28)
+        innerPulse.position = sprite.position
+        innerPulse.fillColor = SKColor.cyan.withAlphaComponent(0.22)
+        innerPulse.strokeColor = .clear
+        innerPulse.zPosition = 5
+        scene.fxLayer.addChild(innerPulse)
+
         pulse.run(.sequence([
-            .group([.scale(to: 12, duration: 0.5), .fadeOut(withDuration: 0.5)]),
+            .group([
+                .scale(to: fullscreenRadius / 40, duration: 0.60),
+                .fadeOut(withDuration: 0.60)
+            ]),
+            .removeFromParent()
+        ]))
+        innerPulse.run(.sequence([
+            .group([
+                .scale(to: fullscreenRadius / 28, duration: 0.50),
+                .fadeOut(withDuration: 0.50)
+            ]),
             .removeFromParent()
         ]))
 

@@ -80,10 +80,7 @@ extension CharacterData {
     }
     
     var cooldownLabel: String {
-        switch kind {
-        case .tower: return "4s"
-        case .trap: return "6s"
-        }
+        "\(Int(cooldownDuration))s"
     }
     
     var attackSpeedLabel: String {

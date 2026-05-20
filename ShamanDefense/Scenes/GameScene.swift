@@ -11,7 +11,9 @@ import UIKit
 
 final class GameScene: SKScene {
     
-    private let tileSize: CGFloat = 36
+    private let baseTileSize: CGFloat = 36
+    private let spriteTileMultiplier: CGFloat = 3
+    private var tileSize: CGFloat = 36
     private let minPlacementSpacing: CGFloat = GhostMetrics.diameter
     
     private(set) var registry: EntityRegistry
@@ -31,27 +33,34 @@ final class GameScene: SKScene {
     private var spiritLabel: GameLabelNode?
     private var spiritCounterNode: SKSpriteNode?
     private var gameOverNode: GameOverNode?
-    private var spawnerEntity: SpawnerEntity?
+    private var waveManagerEntity: WaveManagerEntity?
     private(set) var isGameOver = false
     
-    private var currentSpirit: Int = 10
-    
     var onGoToMainMenu: (() -> Void)?
-
+    var onIntermission: ((Int) -> Void)?
+    var onWaveStart: ((Int) -> Void)?
+    
+    private var currentSpirit: Int = 6
+    private var hasPlayedWaveSpawnSound = false
+    
     override init() {
+        let heartbeatSystem = HeartbeatSystem()
+        
         registry = EntityRegistry(systems: [
             EffectsSystem(),
             PathFollowSystem(),
-            SpawnerSystem(),
+            WaveSystem(),
             HomingSystem(),
             LifetimeSystem(),
             ProximityTriggerSystem(),
             PathRunnerSystem(),
             SlowAuraSystem(),
             StateMachineSystem(),
+            heartbeatSystem
         ])
         registry.add(GameStateEntity())
         super.init(size: .zero)
+        heartbeatSystem.scene = self
     }
     
     required init?(coder: NSCoder) { fatalError("init(coder:) not implemented") }
@@ -94,11 +103,7 @@ final class GameScene: SKScene {
         registry.add(ScoreEntity())
         buildScoreLabel()
         
-        let spawner = SpawnerEntity(interval: 3) { [weak self] in
-            self?.spawnHuman()
-        }
-        spawnerEntity = spawner
-        registry.add(spawner)
+        configureWaveManager()
     }
     
     override func update(_ currentTime: TimeInterval) {
@@ -125,11 +130,69 @@ final class GameScene: SKScene {
         }
     }
     
+    // MARK: - Wave manager
+    
+    private func configureWaveManager() {
+        let waveManager = WaveManagerEntity()
+        if let mgr = waveManager.component(ofType: WaveManagerComponent.self) {
+            mgr.onSpawn = { [weak self] archetype, hpMult in
+                guard let self else { return }
+                
+                if !self.hasPlayedWaveSpawnSound {
+                    SoundManager.shared.playSFX(
+                        "human_spawn.wav",
+                        on: self
+                    )
+                    
+                    self.hasPlayedWaveSpawnSound = true
+                }
+                
+                self.spawnHuman(
+                    archetype: archetype,
+                    hpMultiplier: hpMult
+                )
+            }
+            
+            mgr.onWaveStart = { [weak self] wave in
+                guard let self else { return }
+                
+                self.hasPlayedWaveSpawnSound = false
+                self.onWaveStart?(wave)
+            }
+            
+            mgr.onIntermission = { [weak self] nextWave in
+                guard let self else { return }
+                
+                SoundManager.shared.playSFX(
+                    "wave.wav",
+                    on: self
+                )
+                
+                self.onIntermission?(nextWave)
+            }
+            
+            mgr.humansAliveCount = { [weak self] in
+                self?.registry.humans.count ?? 0
+            }
+            
+            SoundManager.shared.playSFX(
+                "wave.wav",
+                on: self
+            )
+
+            onIntermission?(1)
+        }
+        waveManagerEntity = waveManager
+        registry.add(waveManager)
+    }
+    
     // MARK: - Spawn
     
-    func spawnHuman() {
-        guard let path = registry.path else { return }
-        let entity = HumanEntity(waypoints: path.waypoints)
+    func spawnHuman(archetype: HumanArchetype = .blue, hpMultiplier: CGFloat = 1.0) {
+        guard !isGameOver, let path = registry.path else { return }
+        let entity = HumanEntity(waypoints: path.waypoints,
+                                 archetype: archetype,
+                                 hpMultiplier: hpMultiplier)
         if let pf = entity.component(ofType: PathFollowComponent.self) {
             pf.onArrive = { [weak self, weak entity] in
                 guard let self, let entity else { return }
@@ -137,45 +200,20 @@ final class GameScene: SKScene {
                 self.humanReachedFinish()
             }
         }
-        if let health = entity.component(ofType: HealthComponent.self),
-           let sprite = entity.component(ofType: SpriteComponent.self) {
+        if let health = entity.component(ofType: HealthComponent.self) {
             health.onDeath = { [weak self, weak entity] in
                 guard let self, let entity else { return }
                 
-                if let pf = entity.component(ofType: PathFollowComponent.self) {
-                    pf.frozen = true
-                    pf.arrived = true
-                }
-                entity.component(ofType: SpriteAnimationComponent.self)?.stopAnimating()
-                
-                let node = sprite.node
-                node.removeAllActions()
-                let deathDuration: TimeInterval = 0.65
-                
-                if let body = node.children.first(where: { $0 is SKSpriteNode }) as? SKSpriteNode {
-                    body.texture = SKTexture(imageNamed: "human_dead")
-                    body.removeAllActions()
-                    body.alpha = 1
-                    body.setScale(1.0)
-                    body.run(
-                        .group([
-                            .moveBy(x: 0, y: 26, duration: deathDuration),
-                            .fadeOut(withDuration: deathDuration),
-                            .scale(to: 1.08, duration: deathDuration)
-                        ])
-                    )
-                }
-                
-                self.run(
-                    .sequence([
-                        .wait(forDuration: deathDuration),
-                        .run { [weak self, weak entity] in
-                            guard let self, let entity else { return }
-                            self.removeEntity(entity)
-                            self.humanDefeated()
-                        }
-                    ])
+                SoundManager.shared.playSFX(
+                    "human_dead.wav",
+                    on: self
                 )
+                
+                entity.playDeathAnimation { [weak self, weak entity] in
+                    guard let self, let entity else { return }
+                    self.removeEntity(entity)
+                    self.humanDefeated()
+                }
             }
         }
         installEntity(entity, in: humansLayer)
@@ -235,13 +273,19 @@ final class GameScene: SKScene {
         guard !isGameOver, let score = registry.score else { return }
         isGameOver = true
         
+        SoundManager.shared.playSFX(
+            "game_over.wav",
+            on: self
+        )
+        
         let generator = UINotificationFeedbackGenerator()
         generator.prepare()
         generator.notificationOccurred(.error)
         
-        if let spawner = spawnerEntity {
-            removeEntity(spawner)
-            spawnerEntity = nil
+        if let waveManager = waveManagerEntity {
+            waveManager.component(ofType: WaveManagerComponent.self)?.stop()
+            removeEntity(waveManager)
+            waveManagerEntity = nil
         }
         let wasFirstPlay = score.isFirstPlay
         score.saveAndFinalize()
@@ -290,9 +334,22 @@ final class GameScene: SKScene {
         installEntity(entity, in: towersLayer)
     }
     
-    func spawnProjectile(from origin: CGPoint,
+    func spawnProjectile(source: GameEntity,
+                         from origin: CGPoint,
                          target: GameEntity,
-                         launcher: ProjectileLauncherComponent) {
+                         launcher: ProjectileLauncherComponent,
+                         style: GhostAttackStyle = .projectile) {
+        let context = GhostAttackContext(
+            scene: self,
+            source: source,
+            origin: origin,
+            target: target,
+            launcher: launcher
+        )
+        if GhostAttackDispatcher.executeSpecialIfNeeded(style: style, context: context) {
+            return
+        }
+        
         let entity = ProjectileEntity(from: origin, target: target, launcher: launcher)
         
         if let homing = entity.component(ofType: HomingComponent.self) {
@@ -327,17 +384,23 @@ final class GameScene: SKScene {
     }
     
     func applyAoEDamage(at point: CGPoint, radius: CGFloat, amount: CGFloat, color: SKColor) {
-        let flash = SKShapeNode(circleOfRadius: radius)
-        flash.position = point
-        flash.fillColor = color.withAlphaComponent(0.35)
-        flash.strokeColor = color
-        flash.lineWidth = 2
-        fxLayer.addChild(flash)
-        flash.run(.sequence([
-            .group([.fadeOut(withDuration: 0.25), .scale(to: 1.2, duration: 0.25)]),
-            .removeFromParent()
-        ]))
-        
+        applyAoEDamage(at: point, radius: radius, amount: amount, color: color, showsFlash: true)
+    }
+
+    func applyAoEDamage(at point: CGPoint, radius: CGFloat, amount: CGFloat, color: SKColor, showsFlash: Bool) {
+        if showsFlash {
+            let flash = SKShapeNode(circleOfRadius: radius)
+            flash.position = point
+            flash.fillColor = color.withAlphaComponent(0.35)
+            flash.strokeColor = color
+            flash.lineWidth = 2
+            fxLayer.addChild(flash)
+            flash.run(.sequence([
+                .group([.fadeOut(withDuration: 0.25), .scale(to: 1.2, duration: 0.25)]),
+                .removeFromParent()
+            ]))
+        }
+
         for human in registry.humans {
             guard let pos = human.component(ofType: SpriteComponent.self)?.position,
                   let health = human.component(ofType: HealthComponent.self), health.isAlive else { continue }
@@ -348,6 +411,30 @@ final class GameScene: SKScene {
     }
 
     private func playHeadbuttHitReaction(on target: GameEntity) {
+        guard let root = target.component(ofType: SpriteComponent.self)?.node,
+              let body = root.children.first(where: { $0 is SKSpriteNode }) as? SKSpriteNode else { return }
+        body.removeAction(forKey: "headbutt_hit")
+        body.run(
+            .sequence([
+                .group([
+                    .moveBy(x: 5, y: 1, duration: 0.05),
+                    .rotate(byAngle: .pi / 18, duration: 0.05)
+                ]),
+                .group([
+                    .moveBy(x: -7, y: -1, duration: 0.06),
+                    .rotate(byAngle: -.pi / 12, duration: 0.06)
+                ]),
+                .group([
+                    .moveTo(x: 0, duration: 0.04),
+                    .moveTo(y: 0, duration: 0.04),
+                    .rotate(toAngle: 0, duration: 0.04)
+                ])
+            ]),
+            withKey: "headbutt_hit"
+        )
+    }
+    
+    func playHeadbuttHitReaction(on target: GameEntity) {
         guard let root = target.component(ofType: SpriteComponent.self)?.node,
               let body = root.children.first(where: { $0 is SKSpriteNode }) as? SKSpriteNode else { return }
         body.removeAction(forKey: "headbutt_hit")
@@ -406,30 +493,54 @@ final class GameScene: SKScene {
         }
     }
     
-    func place(_ character: CharacterData, at scenePoint: CGPoint) {
-        guard canPlace(character, at: scenePoint) else { return }
+    @discardableResult
+    func place(_ character: CharacterData, at scenePoint: CGPoint) -> Bool {
+        guard canPlace(character, at: scenePoint) else {
+            SoundManager.shared.playSFX(
+                "wrong_placement.wav",
+                on: self
+            )
+            return false
+        }
         
         guard spendSpirit(character.cost) else {
-            return
+            SoundManager.shared.playSFX(
+                "wrong_placement.wav",
+                on: self
+            )
+            return false
         }
+        
+        SoundManager.shared.playSFX(
+            "placement.wav",
+            on: self
+        )
         
         switch character.kind {
         case .tower: spawnTower(character, at: scenePoint)
         case .trap:  spawnTrap(character, at: scenePoint)
         }
+        
+        return true
     }
     
     // MARK: - Map loading
     
     private func loadMap() {
         var wpNodes: [SKNode] = []
+        let authoredScene = SKScene(fileNamed: "Map")
         if let ref = SKReferenceNode(fileNamed: "Map") {
-            let authored = SKScene(fileNamed: "Map")?.size ?? size
+            let authored = authoredScene?.size ?? size
             let scale = max(size.width / authored.width, size.height / authored.height)
             ref.setScale(scale)
             ref.position = CGPoint(x: size.width / 2, y: size.height / 2)
             mapLayer.addChild(ref)
             collectWaypointNodes(in: ref, into: &wpNodes)
+            if let s = authoredScene { dumpNodes(s, depth: 0) }
+            let localTile = authoredScene.flatMap { measureTileSize(in: $0) } ?? baseTileSize
+            tileSize = localTile * scale
+            CharacterSprites.renderHeight = tileSize * spriteTileMultiplier
+            print("[GameScene] localTile=\(localTile) scale=\(scale) tileSize=\(tileSize) renderHeight=\(CharacterSprites.renderHeight)")
         }
         wpNodes.sort { ($0.name ?? "") < ($1.name ?? "") }
         guard wpNodes.count >= 2 else {
@@ -444,6 +555,43 @@ final class GameScene: SKScene {
             if !(node is SKSpriteNode) { node.isHidden = true }
         }
         registry.add(PathEntity(waypoints: points, halfWidth: tileSize / 2))
+    }
+    
+    private func findFirstTile(_ root: SKNode, median: CGFloat) -> SKSpriteNode? {
+        for c in root.children {
+            if let s = c as? SKSpriteNode, !(c.name ?? "").hasPrefix("wp_"),
+               abs(min(s.size.width, s.size.height) - median) < 0.5 {
+                return s
+            }
+            if let found = findFirstTile(c, median: median) { return found }
+        }
+        return nil
+    }
+    
+    private func dumpNodes(_ n: SKNode, depth: Int) {
+        let kind = String(describing: type(of: n))
+        let sz: String = (n as? SKSpriteNode).map { "size=\($0.size)" } ?? ""
+        print("\(String(repeating: "  ", count: depth))[\(kind)] name=\(n.name ?? "nil") \(sz)")
+        for c in n.children { dumpNodes(c, depth: depth + 1) }
+    }
+    
+    private func measureTileSize(in scene: SKScene) -> CGFloat? {
+        var sizes: [CGFloat] = []
+        func walk(_ n: SKNode) {
+            if let s = n as? SKSpriteNode, !(n.name ?? "").hasPrefix("wp_") {
+                sizes.append(min(s.size.width, s.size.height))
+            }
+            for c in n.children { walk(c) }
+        }
+        walk(scene)
+        guard !sizes.isEmpty else { return nil }
+        let sorted = sizes.sorted()
+        let median = sorted[sorted.count / 2]
+        guard let t = findFirstTile(scene, median: median) else { return nil }
+        let half = CGPoint(x: t.size.width / 2, y: t.size.height / 2)
+        let p0 = scene.convert(CGPoint(x: -half.x, y: -half.y), from: t)
+        let p1 = scene.convert(half, from: t)
+        return min(abs(p1.x - p0.x), abs(p1.y - p0.y))
     }
     
     private func collectWaypointNodes(in root: SKNode, into out: inout [SKNode]) {
@@ -467,13 +615,88 @@ final class GameScene: SKScene {
                 guard let entity,
                       let sm = entity.component(ofType: StateMachineComponent.self) else { return }
                 switch character.id {
-                case .yayang: sm.stateMachine.enter(YayangTriggeredState.self)
-                case .yuyul:  sm.stateMachine.enter(YuyulTriggeredState.self)
+                case .yayang:
+                    SoundManager.shared.playSFX(
+                        "yayang_attack.wav",
+                        on: self
+                    )
+                    sm.stateMachine.enter(
+                        YayangTriggeredState.self
+                    )
+                    
+                case .yuyul:
+                    SoundManager.shared.playSFX(
+                        "yuyul_attack.wav",
+                        on: self
+                    )
+                    sm.stateMachine.enter(
+                        YuyulTriggeredState.self
+                    )
                 default: break
                 }
             }
         }
         installEntity(entity, in: trapsLayer)
+
+        if character.id == .yayang {
+            playYayangPlacementSequence(entity)
+        }
+    }
+
+    private func playYayangPlacementSequence(_ entity: TrapEntity) {
+        guard let root = entity.component(ofType: SpriteComponent.self)?.node,
+              let trigger = entity.component(ofType: ProximityTriggerComponent.self),
+              let stateMachine = entity.component(ofType: StateMachineComponent.self) else { return }
+
+        trigger.armed = false
+        root.removeAction(forKey: "yayang_placement_sequence")
+        let originalZPosition = root.zPosition
+        let worldPosition = root.parent?.convert(root.position, to: self) ?? root.position
+        root.removeFromParent()
+        root.position = hudLayer.convert(worldPosition, from: self)
+        root.zPosition = 60
+        hudLayer.addChild(root)
+
+        let dimOverlay = SKShapeNode(rectOf: size)
+        dimOverlay.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        dimOverlay.fillColor = .black
+        dimOverlay.strokeColor = .clear
+        dimOverlay.alpha = 0
+        dimOverlay.zPosition = 49
+        hudLayer.addChild(dimOverlay)
+        dimOverlay.run(.fadeAlpha(to: 0.35, duration: 0.25))
+
+        let centerPoint = CGPoint(x: size.width / 2, y: size.height / 2)
+        let sequence = SKAction.sequence([
+            .wait(forDuration: 0.70),
+            .group([
+                .move(to: centerPoint, duration: 0.45),
+                .scale(to: 1.35, duration: 0.45)
+            ]),
+            .wait(forDuration: 0.10),
+            .run { [weak self, weak stateMachine, weak dimOverlay, weak root] in
+                stateMachine?.stateMachine.enter(YayangTriggeredState.self)
+                self?.run(.sequence([
+                    .wait(forDuration: 0.05),
+                    .run { [weak self] in
+                        guard let self else { return }
+                        root?.zPosition = originalZPosition
+                        if let root,
+                           let worldBack = root.parent?.convert(root.position, to: self) {
+                            root.removeFromParent()
+                            root.position = self.trapsLayer.convert(worldBack, from: self)
+                            self.trapsLayer.addChild(root)
+                        }
+                        dimOverlay?.run(.sequence([
+                            .fadeOut(withDuration: 0.35),
+                            .removeFromParent()
+                        ]))
+                    }
+                ]))
+            }
+        ])
+        sequence.timingMode = .easeInEaseOut
+        root.run(sequence, withKey: "yayang_placement_sequence")
     }
     
     private func setupMapUI() {
@@ -483,7 +706,7 @@ final class GameScene: SKScene {
         let counterOffset = CGPoint(x: -5, y: -70)
         
         let dukun = SKSpriteNode(imageNamed: "shaman")
-        dukun.setScale(0.5)
+        dukun.setScale(0.8)
         dukun.position = CGPoint(
             x: endPoint.x + dukunOffset.x,
             y: endPoint.y + dukunOffset.y
@@ -547,5 +770,7 @@ final class GameScene: SKScene {
         
         return true
     }
+    
+    
     
 }
