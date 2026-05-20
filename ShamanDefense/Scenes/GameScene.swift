@@ -30,8 +30,7 @@ final class GameScene: SKScene {
     let hudLayer = SKNode()
     
     private var scoreLabel: GameLabelNode!
-    private var spiritLabel: GameLabelNode?
-    private var spiritCounterNode: SKSpriteNode?
+    private var shamanHUD: ShamanHUD?
     private var gameOverNode: GameOverNode?
     private var waveManagerEntity: WaveManagerEntity?
     private(set) var isGameOver = false
@@ -606,55 +605,13 @@ final class GameScene: SKScene {
     private func setupMapUI() {
         guard let path = registry.path else { return }
         let endPoint = path.waypoints.last ?? .zero
-        let dukunOffset = CGPoint(x: 0, y: -20)
-        let counterOffset = CGPoint(x: -5, y: -70)
-        
-        let dukun = SKSpriteNode(imageNamed: "shaman")
-        dukun.setScale(0.8)
-        dukun.position = CGPoint(
-            x: endPoint.x + dukunOffset.x,
-            y: endPoint.y + dukunOffset.y
-        )
-        dukun.zPosition = 10
-        mapLayer.addChild(dukun)
-        
-        let float = SKAction.sequence([
-            .moveBy(x: 0, y: 10, duration: 1),
-            .moveBy(x: 0, y: -10, duration: 1)
-        ])
-        dukun.run(.repeatForever(float))
-        
-        let counter = SKSpriteNode(imageNamed: "spirit_counter")
-        counter.size = CGSize(width: 110, height: 50)
-        counter.position = CGPoint(
-            x: endPoint.x + counterOffset.x,
-            y: endPoint.y + counterOffset.y
-        )
-        counter.zPosition = 11
-        mapLayer.addChild(counter)
-        
-        spiritCounterNode = counter
-        
-        let label = GameLabelNode(
-            text: "0",
-            fontSize: 20,
-            color: .black
-        )
-        label.zPosition = 12
-        label.position = CGPoint(x: 5, y: 3)
-        
-        counter.addChild(label)
-        
-        spiritLabel = label
+        let hud = ShamanHUD(anchor: endPoint)
+        mapLayer.addChild(hud)
+        shamanHUD = hud
     }
-    
+
     func updateSpirit(_ value: Int) {
-        spiritLabel?.text = "\(value)"
-        
-        spiritCounterNode?.run(.sequence([
-            .scale(to: 1.15, duration: 0.08),
-            .scale(to: 1.0, duration: 0.08)
-        ]))
+        shamanHUD?.updateSpirit(value)
     }
     
     private func addSpirit(_ amount: Int) {
