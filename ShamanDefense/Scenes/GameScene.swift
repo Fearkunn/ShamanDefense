@@ -35,12 +35,13 @@ final class GameScene: SKScene {
     private var gameOverNode: GameOverNode?
     private var waveManagerEntity: WaveManagerEntity?
     private(set) var isGameOver = false
-
+    
     var onIntermission: ((Int) -> Void)?
     var onWaveStart: ((Int) -> Void)?
-
+    
     private var currentSpirit: Int = 6
-
+    private var hasPlayedWaveSpawnSound = false
+    
     override init() {
         let heartbeatSystem = HeartbeatSystem()
         
@@ -129,30 +130,63 @@ final class GameScene: SKScene {
     }
     
     // MARK: - Wave manager
-
+    
     private func configureWaveManager() {
         let waveManager = WaveManagerEntity()
         if let mgr = waveManager.component(ofType: WaveManagerComponent.self) {
             mgr.onSpawn = { [weak self] archetype, hpMult in
-                self?.spawnHuman(archetype: archetype, hpMultiplier: hpMult)
+                guard let self else { return }
+                
+                if !self.hasPlayedWaveSpawnSound {
+                    SoundManager.shared.playSFX(
+                        "human_spawn.wav",
+                        on: self
+                    )
+                    
+                    self.hasPlayedWaveSpawnSound = true
+                }
+                
+                self.spawnHuman(
+                    archetype: archetype,
+                    hpMultiplier: hpMult
+                )
             }
+            
             mgr.onWaveStart = { [weak self] wave in
-                self?.onWaveStart?(wave)
+                guard let self else { return }
+                
+                self.hasPlayedWaveSpawnSound = false
+                self.onWaveStart?(wave)
             }
+            
             mgr.onIntermission = { [weak self] nextWave in
-                self?.onIntermission?(nextWave)
+                guard let self else { return }
+                
+                SoundManager.shared.playSFX(
+                    "wave.wav",
+                    on: self
+                )
+                
+                self.onIntermission?(nextWave)
             }
+            
             mgr.humansAliveCount = { [weak self] in
                 self?.registry.humans.count ?? 0
             }
+            
+            SoundManager.shared.playSFX(
+                "wave.wav",
+                on: self
+            )
+
             onIntermission?(1)
         }
         waveManagerEntity = waveManager
         registry.add(waveManager)
     }
-
+    
     // MARK: - Spawn
-
+    
     func spawnHuman(archetype: HumanArchetype = .blue, hpMultiplier: CGFloat = 1.0) {
         guard !isGameOver, let path = registry.path else { return }
         let entity = HumanEntity(waypoints: path.waypoints,
@@ -168,6 +202,12 @@ final class GameScene: SKScene {
         if let health = entity.component(ofType: HealthComponent.self) {
             health.onDeath = { [weak self, weak entity] in
                 guard let self, let entity else { return }
+                
+                SoundManager.shared.playSFX(
+                    "human_dead.wav",
+                    on: self
+                )
+                
                 entity.playDeathAnimation { [weak self, weak entity] in
                     guard let self, let entity else { return }
                     self.removeEntity(entity)
@@ -232,6 +272,11 @@ final class GameScene: SKScene {
         guard !isGameOver, let score = registry.score else { return }
         isGameOver = true
         
+        SoundManager.shared.playSFX(
+            "game_over.wav",
+            on: self
+        )
+        
         let generator = UINotificationFeedbackGenerator()
         generator.prepare()
         generator.notificationOccurred(.error)
@@ -284,6 +329,28 @@ final class GameScene: SKScene {
     func spawnProjectile(from origin: CGPoint,
                          target: GameEntity,
                          launcher: ProjectileLauncherComponent) {
+        
+        switch launcher.sourceGhostID {
+            
+        case .keti:
+            SoundManager.shared.playSFX(
+                "keti_attack.wav",
+                on: self
+            )
+        case .poci:
+            SoundManager.shared.playSFX(
+                "poci_attack.wav",
+                on: self
+            )
+        case .gugun:
+            SoundManager.shared.playSFX(
+                "gugun_attack.wav",
+                on: self
+            )
+        default:
+            break
+        }
+        
         if launcher.sourceGhostID == .keti {
             guard let targetSprite = target.component(ofType: SpriteComponent.self),
                   let health = target.component(ofType: HealthComponent.self),
@@ -489,11 +556,26 @@ final class GameScene: SKScene {
     
     @discardableResult
     func place(_ character: CharacterData, at scenePoint: CGPoint) -> Bool {
-        guard canPlace(character, at: scenePoint) else { return false }
-        
-        guard spendSpirit(character.cost) else {
+        guard canPlace(character, at: scenePoint) else {
+            SoundManager.shared.playSFX(
+                "wrong_placement.wav",
+                on: self
+            )
             return false
         }
+        
+        guard spendSpirit(character.cost) else {
+            SoundManager.shared.playSFX(
+                "wrong_placement.wav",
+                on: self
+            )
+            return false
+        }
+        
+        SoundManager.shared.playSFX(
+            "placement.wav",
+            on: self
+        )
         
         switch character.kind {
         case .tower: spawnTower(character, at: scenePoint)
@@ -546,14 +628,14 @@ final class GameScene: SKScene {
         }
         return nil
     }
-
+    
     private func dumpNodes(_ n: SKNode, depth: Int) {
         let kind = String(describing: type(of: n))
         let sz: String = (n as? SKSpriteNode).map { "size=\($0.size)" } ?? ""
         print("\(String(repeating: "  ", count: depth))[\(kind)] name=\(n.name ?? "nil") \(sz)")
         for c in n.children { dumpNodes(c, depth: depth + 1) }
     }
-
+    
     private func measureTileSize(in scene: SKScene) -> CGFloat? {
         var sizes: [CGFloat] = []
         func walk(_ n: SKNode) {
@@ -572,7 +654,7 @@ final class GameScene: SKScene {
         let p1 = scene.convert(half, from: t)
         return min(abs(p1.x - p0.x), abs(p1.y - p0.y))
     }
-
+    
     private func collectWaypointNodes(in root: SKNode, into out: inout [SKNode]) {
         for child in root.children {
             if let name = child.name, name.hasPrefix("wp_") {
@@ -594,8 +676,23 @@ final class GameScene: SKScene {
                 guard let entity,
                       let sm = entity.component(ofType: StateMachineComponent.self) else { return }
                 switch character.id {
-                case .yayang: sm.stateMachine.enter(YayangTriggeredState.self)
-                case .yuyul:  sm.stateMachine.enter(YuyulTriggeredState.self)
+                case .yayang:
+                    SoundManager.shared.playSFX(
+                        "yayang_attack.wav",
+                        on: self
+                    )
+                    sm.stateMachine.enter(
+                        YayangTriggeredState.self
+                    )
+                    
+                case .yuyul:
+                    SoundManager.shared.playSFX(
+                        "yuyul_attack.wav",
+                        on: self
+                    )
+                    sm.stateMachine.enter(
+                        YuyulTriggeredState.self
+                    )
                 default: break
                 }
             }
@@ -674,5 +771,7 @@ final class GameScene: SKScene {
         
         return true
     }
+    
+    
     
 }
