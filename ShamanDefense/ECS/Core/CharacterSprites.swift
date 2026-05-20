@@ -7,12 +7,13 @@ import SpriteKit
 
 enum CharacterSprites {
     static let spriteHeight: CGFloat = 36
+    static var renderHeight: CGFloat = spriteHeight
 
     static func texture(for id: GhostID, facing: FacingDirection) -> SKTexture {
         SKTexture(imageNamed: assetName(for: id, facing: facing))
     }
 
-    static func size(for texture: SKTexture, height: CGFloat = spriteHeight) -> CGSize {
+    static func size(for texture: SKTexture, height: CGFloat = renderHeight) -> CGSize {
         let s = texture.size()
         guard s.height > 0 else { return CGSize(width: height, height: height) }
         return CGSize(width: height * (s.width / s.height), height: height)

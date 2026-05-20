@@ -18,6 +18,7 @@ struct GameScreen: View {
         s.scaleMode = .resizeFill
         return s
     }()
+    @State private var currentWave: Int = 0
     @State private var selected: CharacterData? = nil
     @State private var dragging: (character: CharacterData, location: CGPoint)? = nil
     @State private var waveWarning: WaveWarningBannerData? = nil
@@ -85,25 +86,37 @@ struct GameScreen: View {
                 }
 
                 if let waveWarning {
-                    WaveWarningBanner(data: waveWarning)
-                        .padding(.top, 16)
-                        .padding(.horizontal, 16)
-                        .transition(.move(edge: .top).combined(with: .opacity))
-                        .zIndex(10)
-                        .allowsHitTesting(false)
-                }
+                                    Color.black
+                                        .opacity(0.6)
+                                        .ignoresSafeArea()
+                                        .transition(.opacity)
+                                        .zIndex(9)
+
+                                    WaveWarningBanner(data: waveWarning)
+                                        .padding(.top, geo.safeAreaInsets.top + 300)
+                                        .padding(.horizontal, 16)
+                                        .transition(.move(edge: .top).combined(with: .opacity))
+                                        .zIndex(10)
+                                        .allowsHitTesting(false)
+                                }
             }
             .animation(.easeInOut(duration: 0.22), value: waveWarning)
             .coordinateSpace(name: gameCoordSpace)
+            .onAppear {
+                scene.onIntermission = { nextWave in
+                    showIncomingWaveWarning(waveNumber: nextWave)
+                }
+                scene.onWaveStart = { wave in
+                    currentWave = wave
+                }
+            }
         }
         .ignoresSafeArea()
     }
 
-    // Hook this to WaveManager / system callback later.
     private func showIncomingWaveWarning(waveNumber: Int) {
         waveWarning = WaveWarningBannerData(
-            title: "WAVE \(waveNumber) INCOMING",
-            subtitle: "Prepare your defenses"
+            title: "A wave of human is approaching"
         )
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.2) {
             withAnimation {
