@@ -103,15 +103,26 @@ struct GameScreen: View {
             .animation(.easeInOut(duration: 0.22), value: waveWarning)
             .coordinateSpace(name: gameCoordSpace)
             .onAppear {
-                scene.onIntermission = { nextWave in
-                    showIncomingWaveWarning(waveNumber: nextWave)
-                }
-                scene.onWaveStart = { wave in
-                    currentWave = wave
-                }
+                wireSceneCallbacks()
             }
         }
         .ignoresSafeArea()
+    }
+
+    private func wireSceneCallbacks() {
+        scene.onIntermission = { nextWave in
+            showIncomingWaveWarning(waveNumber: nextWave)
+        }
+        scene.onWaveStart = { wave in
+            currentWave = wave
+        }
+        scene.onRetry = {
+            currentWave = 0
+            selected = nil
+            dragging = nil
+            waveWarning = nil
+            isPaused = false
+        }
     }
 
     private func showIncomingWaveWarning(waveNumber: Int) {

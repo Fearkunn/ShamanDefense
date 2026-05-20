@@ -37,6 +37,8 @@ final class GameScene: SKScene {
 
     var onIntermission: ((Int) -> Void)?
     var onWaveStart: ((Int) -> Void)?
+    var onRetry: (() -> Void)?
+    var onMainMenu: (() -> Void)?
 
     private var currentSpirit: Int = 6
 
@@ -257,13 +259,54 @@ final class GameScene: SKScene {
     }
     
     private func restartGame() {
+        gameOverNode?.removeFromParent()
         gameOverNode = nil
-        let newScene = GameScene()
-        newScene.scaleMode = scaleMode
-        view?.presentScene(newScene, transition: .fade(withDuration: 0.4))
+        resetWorld()
+        onRetry?()
     }
-    
+
     private func goToMainMenu() {
+        onMainMenu?()
+    }
+
+    private func resetWorld() {
+        for entity in registry.all where entity.archetype == .human
+                                       || entity.archetype == .tower
+                                       || entity.archetype == .trap
+                                       || entity.archetype == .projectile {
+            if let node = entity.component(ofType: SpriteComponent.self)?.node {
+                node.removeFromParent()
+            }
+            registry.remove(entity)
+        }
+        if let scoreEntity = registry.all.first(where: { $0 is ScoreEntity }) {
+            registry.remove(scoreEntity)
+        }
+        if let waveManager = waveManagerEntity {
+            waveManager.component(ofType: WaveManagerComponent.self)?.stop()
+            registry.remove(waveManager)
+        }
+        waveManagerEntity = nil
+
+        pendingRemovals.removeAll(keepingCapacity: true)
+        fxLayer.removeAllChildren()
+        humansLayer.removeAllChildren()
+        towersLayer.removeAllChildren()
+        trapsLayer.removeAllChildren()
+        projectilesLayer.removeAllChildren()
+        removeAllActions()
+
+        registry.pause?.isPaused = false
+        isGameOver = false
+        lastUpdateTime = 0
+        currentSpirit = 6
+        updateSpirit(currentSpirit)
+
+        registry.add(ScoreEntity())
+        scoreLabel?.removeAllActions()
+        scoreLabel?.text = "0"
+
+        configureWaveManager()
     }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
