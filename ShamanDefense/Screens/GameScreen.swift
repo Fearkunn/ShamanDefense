@@ -23,6 +23,7 @@ struct GameScreen: View {
     @State private var dragging: (character: CharacterData, location: CGPoint)? = nil
     @State private var waveWarning: WaveWarningBannerData? = nil
     @State private var isPaused = false
+    @State private var gameOver: GameOverOverlayData? = nil
 
     var body: some View {
         GeometryReader { geo in
@@ -54,6 +55,14 @@ struct GameScreen: View {
                     ).padding(.bottom, 30).padding(.horizontal, 10)
                 }
 
+                if isPaused || gameOver != nil || waveWarning != nil {
+                    Color.black.opacity(0.55)
+                        .ignoresSafeArea()
+                        .transition(.opacity)
+                        .zIndex(8)
+                        .allowsHitTesting(isPaused || gameOver != nil)
+                }
+
                 if isPaused {
                     PauseOverlayView(
                         onContinue: {
@@ -64,6 +73,22 @@ struct GameScreen: View {
                             // TODO: navigate to main menu
                         }
                     )
+                    .zIndex(11)
+                }
+
+                if let data = gameOver {
+                    GameOverOverlayView(
+                        data: data,
+                        onRetry: {
+                            gameOver = nil
+                            scene.restartGame()
+                        },
+                        onMainMenu: {
+                            gameOver = nil
+                            scene.goToMainMenu()
+                        }
+                    )
+                    .zIndex(12)
                 }
 
                 HStack {
@@ -86,21 +111,16 @@ struct GameScreen: View {
                 }
 
                 if let waveWarning {
-                                    Color.black
-                                        .opacity(0.6)
-                                        .ignoresSafeArea()
-                                        .transition(.opacity)
-                                        .zIndex(9)
-
-                                    WaveWarningBanner(data: waveWarning)
-                                        .padding(.horizontal, 16)
-                                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-                                        .transition(.move(edge: .top).combined(with: .opacity))
-                                        .zIndex(10)
-                                        .allowsHitTesting(false)
-                                }
+                    WaveWarningBanner(data: waveWarning)
+                        .padding(.horizontal, 16)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                        .zIndex(10)
+                        .allowsHitTesting(false)
+                }
             }
             .animation(.easeInOut(duration: 0.22), value: waveWarning)
+            .animation(.easeInOut(duration: 0.22), value: isPaused)
             .coordinateSpace(name: gameCoordSpace)
             .onAppear {
                 wireSceneCallbacks()
@@ -122,6 +142,12 @@ struct GameScreen: View {
             dragging = nil
             waveWarning = nil
             isPaused = false
+            gameOver = nil
+        }
+        scene.onGameOver = { score, high, isFirst in
+            withAnimation(.easeInOut(duration: 0.22)) {
+                gameOver = GameOverOverlayData(score: score, highScore: high, isFirstPlay: isFirst)
+            }
         }
     }
 

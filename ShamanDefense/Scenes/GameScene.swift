@@ -31,7 +31,6 @@ final class GameScene: SKScene {
     
     private var scoreLabel: GameLabelNode!
     private var shamanHUD: ShamanHUD?
-    private var gameOverNode: GameOverNode?
     private var waveManagerEntity: WaveManagerEntity?
     private(set) var isGameOver = false
 
@@ -39,8 +38,9 @@ final class GameScene: SKScene {
     var onWaveStart: ((Int) -> Void)?
     var onRetry: (() -> Void)?
     var onMainMenu: (() -> Void)?
+    var onGameOver: ((_ score: Int, _ highScore: Int, _ isFirstPlay: Bool) -> Void)?
 
-    private var currentSpirit: Int = 6
+    private var currentSpirit: Int = 10
 
     override init() {
         let heartbeatSystem = HeartbeatSystem()
@@ -244,28 +244,16 @@ final class GameScene: SKScene {
         }
         let wasFirstPlay = score.isFirstPlay
         score.saveAndFinalize()
-        
-        let overlay = GameOverNode(score: score.current,
-                                   highScore: score.high,
-                                   isFirstPlay: wasFirstPlay,
-                                   sceneSize: size)
-        overlay.position = CGPoint(x: size.width / 2, y: size.height / 2)
-        overlay.zPosition = 100
-        addChild(overlay)
-        gameOverNode = overlay
-        
-        overlay.onRetry    = { [weak self] in self?.restartGame() }
-        overlay.onMainMenu = { [weak self] in self?.goToMainMenu() }
+
+        onGameOver?(score.current, score.high, wasFirstPlay)
     }
-    
-    private func restartGame() {
-        gameOverNode?.removeFromParent()
-        gameOverNode = nil
+
+    func restartGame() {
         resetWorld()
         onRetry?()
     }
 
-    private func goToMainMenu() {
+    func goToMainMenu() {
         onMainMenu?()
     }
 
@@ -308,15 +296,7 @@ final class GameScene: SKScene {
 
         configureWaveManager()
     }
-    
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let touch = touches.first else { return }
-        let loc = touch.location(in: self)
-        if let overlay = gameOverNode {
-            overlay.handleTap(at: loc)
-        }
-    }
-    
+
     func spawnTower(_ character: CharacterData, at point: CGPoint) {
         let entity = TowerEntity(character: character)
         entity.component(ofType: SpriteComponent.self)?.position = point
