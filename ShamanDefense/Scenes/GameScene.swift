@@ -37,6 +37,8 @@ final class GameScene: SKScene {
     private var currentSpirit: Int = 10
     
     override init() {
+        let heartbeatSystem = HeartbeatSystem()
+        
         registry = EntityRegistry(systems: [
             EffectsSystem(),
             PathFollowSystem(),
@@ -47,9 +49,11 @@ final class GameScene: SKScene {
             PathRunnerSystem(),
             SlowAuraSystem(),
             StateMachineSystem(),
+            heartbeatSystem
         ])
         registry.add(GameStateEntity())
         super.init(size: .zero)
+        heartbeatSystem.scene = self
     }
     
     required init?(coder: NSCoder) { fatalError("init(coder:) not implemented") }
