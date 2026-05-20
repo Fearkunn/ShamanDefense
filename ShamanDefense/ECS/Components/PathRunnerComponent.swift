@@ -14,6 +14,7 @@ final class PathRunnerComponent: GKComponent {
 
     var segmentIndex: Int = 0
     var completed: Bool = false
+    var footPuffCooldown: TimeInterval = 0
 
     init(speed: CGFloat) {
         self.speed = speed
@@ -26,5 +27,6 @@ final class PathRunnerComponent: GKComponent {
         self.waypoints = waypoints
         segmentIndex = 0
         completed = false
+        footPuffCooldown = 0
     }
 }

@@ -30,7 +30,7 @@ final class TowerEntity: GameEntity {
         aura.fillColor = .black
         aura.strokeColor = .clear
         aura.alpha = 0.20
-        aura.position = CGPoint(x: 0, y: -CharacterSprites.spriteHeight * 0.50)
+        aura.position = CGPoint(x: 0, y: -CharacterSprites.spriteHeight * 0.70)
         aura.zPosition = 0
         sprite.zPosition = 1
         root.addChild(aura)
@@ -42,6 +42,18 @@ final class TowerEntity: GameEntity {
         addComponent(PlacementBlockerComponent(radius: GhostMetrics.diameter / 2))
         addComponent(TargetingComponent(range: stats.range))
         addComponent(FiringComponent(fireInterval: stats.fireInterval))
+        let attackStyle: GhostAttackStyle
+        switch character.id {
+        case .poci:
+            attackStyle = .pociHeadbutt
+        case .keti:
+            attackStyle = .ketiScream
+        case .gugun:
+            attackStyle = .gugunJump
+        default:
+            attackStyle = .projectile
+        }
+        addComponent(GhostAttackProfileComponent(style: attackStyle))
         addComponent(ProjectileLauncherComponent(
             sourceGhostID: character.id,
             projectileSpeed: stats.projectileSpeed,

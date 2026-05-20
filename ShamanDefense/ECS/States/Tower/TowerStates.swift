@@ -42,6 +42,7 @@ final class TowerFiringState: GameState {
               let sprite = entity.component(ofType: SpriteComponent.self),
               let targeting = entity.component(ofType: TargetingComponent.self),
               let launcher = entity.component(ofType: ProjectileLauncherComponent.self),
+              let attackProfile = entity.component(ofType: GhostAttackProfileComponent.self),
               let firing = entity.component(ofType: FiringComponent.self),
               let target = targeting.currentTarget,
               let scene = sprite.node.scene as? GameScene else {
@@ -65,7 +66,7 @@ final class TowerFiringState: GameState {
 
             let headbuttTexture = SKTexture(imageNamed: "poci_headbutt")
             body.texture = headbuttTexture
-            body.size = CharacterSprites.size(for: headbuttTexture, height: CharacterSprites.spriteHeight)
+            body.size = originalSize
             let facingX: CGFloat
             if let targetPos = target.component(ofType: SpriteComponent.self)?.position {
                 // Face toward the lane target during headbutt.
@@ -80,15 +81,43 @@ final class TowerFiringState: GameState {
                 facingX = originalXScale
             }
             body.xScale = facingX
+            body.yScale = originalYScale
+
             body.run(
                 .sequence([
                     .group([
-                        .scaleX(to: facingX * 1.12, y: originalYScale * 1.12, duration: 0.07),
-                        .moveBy(x: 0, y: 4, duration: 0.12)
+                        .moveBy(x: 0, y: -1.5, duration: 0.05),
+                        .scaleX(to: facingX * 0.98, y: originalYScale * 0.98, duration: 0.05)
                     ]),
                     .group([
-                        .scaleX(to: facingX, y: originalYScale, duration: 0.07),
-                        .moveBy(x: 0, y: -4, duration: 0.12)
+                        .moveBy(x: facingX < 0 ? 5 : -5, y: 4.5, duration: 0.10),
+                        .scaleX(to: facingX * 1.04, y: originalYScale * 1.04, duration: 0.10)
+                    ]),
+                    .run {
+                        let puffPoint = CGPoint(
+                            x: sprite.position.x + (facingX < 0 ? 10 : -10),
+                            y: sprite.position.y + CharacterSprites.spriteHeight * 0.34
+                        )
+                        for offset in [-7.0, -2.0, 2.0, 7.0] {
+                            let puff = SKShapeNode(circleOfRadius: 5.8)
+                            puff.position = CGPoint(x: puffPoint.x + offset, y: puffPoint.y)
+                            puff.fillColor = SKColor(white: 0.95, alpha: 0.62)
+                            puff.strokeColor = .clear
+                            puff.zPosition = 20
+                            scene.fxLayer.addChild(puff)
+                            puff.run(.sequence([
+                                .group([
+                                    .moveBy(x: offset * 0.65, y: 7.0, duration: 0.22),
+                                    .scale(to: 2.1, duration: 0.22),
+                                    .fadeOut(withDuration: 0.22)
+                                ]),
+                                .removeFromParent()
+                            ]))
+                        }
+                    },
+                    .group([
+                        .moveBy(x: facingX < 0 ? -5 : 5, y: -3.0, duration: 0.10),
+                        .scaleX(to: facingX, y: originalYScale, duration: 0.10)
                     ]),
                     .run {
                         body.texture = originalTexture
@@ -101,7 +130,13 @@ final class TowerFiringState: GameState {
             )
         }
 
-        scene.spawnProjectile(from: sprite.position, target: target, launcher: launcher)
+        scene.spawnProjectile(
+            source: entity,
+            from: sprite.position,
+            target: target,
+            launcher: launcher,
+            style: attackProfile.style
+        )
         firing.resetCooldown()
         stateMachine?.enter(TowerCooldownState.self)
     }
