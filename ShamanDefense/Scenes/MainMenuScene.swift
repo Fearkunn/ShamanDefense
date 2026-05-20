@@ -7,13 +7,14 @@
 
 import SwiftUI
 import SpriteKit
-import UIKit
 
 class MainMenuScene: SKScene {
-
+    
     // MARK: - Properties
 
-    private let viewModel = MainMenuViewModel()
+    /// Di-set oleh ContentView. Dipanggil saat user tap Start.
+    var onStartGame: (() -> Void)?
+
     private let optionViewModel = OptionViewModel()
     private var optionPopup: OptionPopupNode?
 
@@ -108,13 +109,13 @@ class MainMenuScene: SKScene {
         let swing: CGFloat         = 0.08
         let duration: TimeInterval = 0.55
 
-        let tiltLeft  = SKAction.rotate(toAngle: baseRotation - swing, duration: duration)
+        let tiltLeft = SKAction.rotate(toAngle: baseRotation - swing, duration: duration)
         tiltLeft.timingMode = .easeInEaseOut
 
         let tiltRight = SKAction.rotate(toAngle: baseRotation + swing, duration: duration)
         tiltRight.timingMode = .easeInEaseOut
 
-        let center    = SKAction.rotate(toAngle: baseRotation, duration: duration * 0.5)
+        let center = SKAction.rotate(toAngle: baseRotation, duration: duration * 0.5)
         center.timingMode = .easeInEaseOut
 
         let pause = SKAction.wait(forDuration: 1.2)
@@ -170,31 +171,17 @@ class MainMenuScene: SKScene {
     // MARK: - Navigation
 
     private func goToGame() {
-        // Animasi tap pada tombol Start sebelum pindah scene
         guard let startNode = childNode(withName: "start") else { return }
 
         let scaleDown = SKAction.scale(to: 0.92, duration: 0.08)
         let scaleUp   = SKAction.scale(to: 1.00, duration: 0.08)
-        let transition = SKAction.run { [weak self] in
-            guard let self, let view = self.view else { return }
-
-            let storyScreen = StartStoryScreen { [weak view] in
-                guard let view else { return }
-
-                view.window?.rootViewController?.dismiss(animated: true) {
-                    let gameScene = GameScene()
-                    gameScene.size = view.bounds.size
-                    gameScene.scaleMode = .resizeFill
-                    view.presentScene(gameScene, transition: .fade(withDuration: 0.4))
-                }
+        let navigate  = SKAction.run { [weak self] in
+            DispatchQueue.main.async {
+                self?.onStartGame?()
             }
-
-            let hostingController = UIHostingController(rootView: storyScreen)
-            hostingController.modalPresentationStyle = .fullScreen
-            view.window?.rootViewController?.present(hostingController, animated: true)
         }
 
-        startNode.run(.sequence([scaleDown, scaleUp, transition]))
+        startNode.run(.sequence([scaleDown, scaleUp, navigate]))
     }
 
     // MARK: - Option Popup
@@ -220,7 +207,6 @@ class MainMenuScene: SKScene {
         let location    = touch.location(in: self)
         let touchedNode = atPoint(location)
 
-        // Kalau popup sedang terbuka, teruskan ke popup dan stop
         if let popup = optionPopup {
             popup.handleTouchBegan(at: location, touchedNode: touchedNode)
             return
@@ -231,10 +217,9 @@ class MainMenuScene: SKScene {
             goToGame()
 
         case "characters":
-            viewModel.openCharacters()
+            break // TODO: sambungkan ke Characters screen
 
         case "settings":
-            viewModel.openSettings()
             showOptionPopup()
 
         default:

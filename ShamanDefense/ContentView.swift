@@ -6,23 +6,60 @@
 //
 
 import SwiftUI
+import SpriteKit
+
+// MARK: - App Navigation State
+
+enum AppScreen {
+    case mainMenu
+    case story
+    case game
+}
+
+// MARK: - ContentView
 
 struct ContentView: View {
-    @AppStorage("hasSeenStartStory") private var hasSeenStartStory = false
+
+    @State private var screen: AppScreen = .mainMenu
+
+    // Buat scene sekali, simpan di State supaya tidak re-create saat view rebuild
+    @State private var menuScene: MainMenuScene = {
+        let scene = MainMenuScene(size: UIScreen.main.bounds.size)
+        scene.scaleMode = .aspectFill
+        return scene
+    }()
 
     var body: some View {
         Group {
-            if hasSeenStartStory {
-                GameScreen()
-            } else {
-                StartStoryScreen {
-                    hasSeenStartStory = true
+            switch screen {
+
+            case .mainMenu:
+                GeometryReader { geo in
+                    SpriteView(scene: menuScene)
+                        .ignoresSafeArea()
+                        .onAppear {
+                            // Update ukuran scene sesuai layar aktual
+                            menuScene.size = geo.size
+                            // Sambungkan callback Start ke sini
+                            menuScene.onStartGame = {
+                                screen = .story
+                            }
+                        }
                 }
+                .ignoresSafeArea()
+
+            case .story:
+                StartStoryScreen {
+                    screen = .game
+                }
+
+            case .game:
+                GameScreen(onMainMenu: {
+                    screen = .mainMenu
+                })
             }
+            
         }
-        // selalu tampil story screen dulu 
-        .onAppear {
-            hasSeenStartStory = false
-        }
+        .animation(.easeInOut(duration: 0.4), value: screen)
     }
 }
