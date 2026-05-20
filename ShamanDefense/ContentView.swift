@@ -8,7 +8,8 @@
 import SwiftUI
 
 struct ContentView: View {
-    @AppStorage("hasSeenStartStory") private var hasSeenStartStory = false
+    @AppStorage("hasSeenStartStory")
+    private var hasSeenStartStory = false
 
     var body: some View {
         Group {
@@ -20,9 +21,9 @@ struct ContentView: View {
                 }
             }
         }
-        // selalu tampil story screen dulu 
         .onAppear {
             hasSeenStartStory = false
+            SoundManager.shared.playBGM ("bgm.mp3")
         }
     }
 }
