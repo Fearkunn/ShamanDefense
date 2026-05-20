@@ -93,8 +93,8 @@ struct GameScreen: View {
                                         .zIndex(9)
 
                                     WaveWarningBanner(data: waveWarning)
-                                        .padding(.top, geo.safeAreaInsets.top + 300)
                                         .padding(.horizontal, 16)
+                                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                                         .transition(.move(edge: .top).combined(with: .opacity))
                                         .zIndex(10)
                                         .allowsHitTesting(false)
