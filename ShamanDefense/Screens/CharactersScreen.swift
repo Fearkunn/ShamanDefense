@@ -18,7 +18,8 @@ struct CharactersScreen: View {
         tint: .orange,
         kind: .tower,
         tower: TowerStats(range: 100, fireInterval: 2.0, damage: 1, projectileSpeed: 420),
-        trap: nil
+        trap: nil,
+        cooldownDuration: 4.0
     )
 
     var body: some View {
