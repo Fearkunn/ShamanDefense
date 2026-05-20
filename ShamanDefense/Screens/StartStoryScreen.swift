@@ -9,7 +9,7 @@ import SwiftUI
 
 private extension View {
     var storyTextColor: Color { Color(hex: "#4B4B4B") }
-
+    
     func storyTextStyle() -> some View {
         self
             .font(.custom("Montserrat", size: 14))
@@ -40,13 +40,26 @@ struct StartStoryScreen: View {
         visibleCharacterCount >= currentStoryCharacters.count
     }
     
-    private var typedStoryText: String {
-        String(currentStoryCharacters.prefix(visibleCharacterCount))
+    private var displayedStoryText: AttributedString {
+        var attributed = AttributedString(storyPages[pageIndex])
+        let visible = min(visibleCharacterCount, attributed.characters.count)
+        
+        var index = attributed.startIndex
+        var current = 0
+        while index < attributed.endIndex {
+            let next = attributed.index(afterCharacter: index)
+            if current >= visible {
+                attributed[index..<next].foregroundColor = .clear
+            }
+            current += 1
+            index = next
+        }
+        return attributed
     }
     
     private let storyPages: [String] = [
-        "You are a shaman living deep in the forest, performing rituals and communicating with wandering spirits.",
-        "Now, the villagers are coming to approach you — summon the spirits and protect yourself before they reach you."
+        "You are a shaman living deep in the \nforest, performing rituals and communicating with wandering spirits.",
+        "Now, the villagers are coming to \napproach you — summon the spirits and protect yourself before they reach you."
     ]
     
     var body: some View {
@@ -55,7 +68,7 @@ struct StartStoryScreen: View {
                 .resizable()
                 .scaledToFill()
                 .ignoresSafeArea()
-
+            
             Color.black.opacity(0.35)
                 .ignoresSafeArea()
             
@@ -63,34 +76,44 @@ struct StartStoryScreen: View {
                 Spacer()
                 
                 VStack(spacing: 12) {
-                    Text(typedStoryText)
+                    Text(displayedStoryText)
                         .storyTextStyle()
+                        .lineLimit(3)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                 }
                 .frame(maxWidth: .infinity, minHeight: 170, maxHeight: 170, alignment: .center)
                 .background(
                     Image(pageIndex == 0 ? "bg_story_1" : "bg_story_2")
                         .resizable()
                         .scaledToFit()
+                        .offset(y: pageIndex == 1 ? -0.05 : 0)
                 )
                 .padding(.horizontal, 24)
-
-                if isLastPage {
-                    startDefendingButton
-                        .opacity(isTypingCompleted ? 1 : 0)
+                
+                Group {
+                    if isLastPage {
+                        startDefendingButton
+                            .opacity(isTypingCompleted ? 1 : 0)
+                    } else {
+                        Color.clear
+                    }
                 }
+                .frame(height: 72)
                 
                 Spacer()
-                
-                if !isLastPage && isTypingCompleted {
+            }
+            .offset(y: -30)
+            
+            if !isLastPage && isTypingCompleted {
+                VStack {
+                    Spacer()
                     Text("TAP ANYWHERE!")
                         .font(.custom("Montserrat", size: 18))
                         .fontWeight(.bold)
                         .foregroundStyle(.white)
                         .padding(.bottom, 72)
-                } else {
-                    Color.clear
-                        .frame(height: 72)
                 }
+                .allowsHitTesting(false)
             }
         }
         .contentShape(Rectangle())
@@ -138,7 +161,7 @@ struct StartStoryScreen: View {
         
         for index in 1...total {
             visibleCharacterCount = index
-            try? await Task.sleep(nanoseconds: 70_000_000)
+            try? await Task.sleep(nanoseconds: 30_000_000)
         }
     }
 }
