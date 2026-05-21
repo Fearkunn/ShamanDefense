@@ -1,15 +1,17 @@
 {
   "images" : [
     {
-      "filename" : "hanging_score.svg",
+      "filename" : "bg start screen.svg",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
+      "filename" : "bg start screen 1.svg",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
+      "filename" : "bg start screen 2.svg",
       "idiom" : "universal",
       "scale" : "3x"
     }

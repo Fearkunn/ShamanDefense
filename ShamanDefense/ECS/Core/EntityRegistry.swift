@@ -75,4 +75,20 @@ final class EntityRegistry {
             }
         }
     }
+    
+    func removeAll() {
+        let snapshot = all
+        for entity in snapshot {
+            remove(entity)
+        }
+        humans.removeAll()
+        towers.removeAll()
+        traps.removeAll()
+        projectiles.removeAll()
+        all.removeAll()
+        path = nil
+        score = nil
+        pause = nil
+    }
+
 }

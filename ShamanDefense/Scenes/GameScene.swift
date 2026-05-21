@@ -28,11 +28,11 @@ final class GameScene: SKScene {
     let fxLayer = SKNode()
     let hudLayer = SKNode()
     
-    private var scoreLabel: GameLabelNode!
+    var scoreLabel: GameLabelNode!
     private var shamanHUD: ShamanHUD?
     private var waveManagerEntity: WaveManagerEntity?
     private(set) var isGameOver = false
-    
+
     var onIntermission: ((Int) -> Void)?
     var onWaveStart: ((Int) -> Void)?
     var onRetry: (() -> Void)?
@@ -227,42 +227,6 @@ final class GameScene: SKScene {
     
     // MARK: - Score / game over
     
-    private func buildScoreLabel() {
-        
-        let hangingBoard = SKSpriteNode(imageNamed: "hanging_score")
-        hangingBoard.zPosition = 100
-        hangingBoard.size = CGSize(width: 200, height: 100)
-        
-        hangingBoard.position = CGPoint(
-            x: size.width / 2,
-            y: size.height - 40
-        )
-        hudLayer.addChild(hangingBoard)
-        
-        let titleLabel = GameLabelNode(
-            text: "Score:",
-            fontSize: 10
-        )
-        titleLabel.position = CGPoint(
-            x: 0,
-            y: -2
-        )
-        titleLabel.zPosition = 101
-        hangingBoard.addChild(titleLabel)
-        
-        scoreLabel = GameLabelNode(
-            text: "0",
-            fontSize: 40
-        )
-        
-        scoreLabel.position = CGPoint(
-            x: 0,
-            y: -25
-        )
-        scoreLabel.zPosition = 101
-        hangingBoard.addChild(scoreLabel)
-    }
-    
     func humanDefeated() {
         guard !isGameOver, let score = registry.score else { return }
         score.add(1)
@@ -429,7 +393,7 @@ final class GameScene: SKScene {
             }
         }
     }
-    
+
     func playHeadbuttHitReaction(on target: GameEntity) {
         guard let root = target.component(ofType: SpriteComponent.self)?.node,
               let body = root.children.first(where: { $0 is SKSpriteNode }) as? SKSpriteNode else { return }
@@ -631,9 +595,7 @@ final class GameScene: SKScene {
                         "yayang_attack.wav",
                         on: self
                     )
-                    sm.stateMachine.enter(
-                        YayangTriggeredState.self
-                    )
+                    self.playYayangPlacementSequence(entity)
                     
                 case .yuyul:
                     SoundManager.shared.playSFX(
@@ -648,10 +610,6 @@ final class GameScene: SKScene {
             }
         }
         installEntity(entity, in: trapsLayer)
-
-        if character.id == .yayang {
-            playYayangPlacementSequence(entity)
-        }
     }
 
     private func playYayangPlacementSequence(_ entity: TrapEntity) {
@@ -709,7 +667,7 @@ final class GameScene: SKScene {
         sequence.timingMode = .easeInEaseOut
         root.run(sequence, withKey: "yayang_placement_sequence")
     }
-    
+
     private func setupMapUI() {
         guard let path = registry.path else { return }
         let endPoint = path.waypoints.last ?? .zero
@@ -722,25 +680,21 @@ final class GameScene: SKScene {
         shamanHUD?.updateSpirit(value)
         onSpiritChanged?(value)
     }
-    
+
     private func addSpirit(_ amount: Int) {
         currentSpirit += amount
         updateSpirit(currentSpirit)
     }
-    
+
     @discardableResult
     private func spendSpirit(_ amount: Int) -> Bool {
-        
         guard currentSpirit >= amount else {
             return false
         }
-        
+
         currentSpirit -= amount
         updateSpirit(currentSpirit)
-        
         return true
     }
-    
-    
-    
+
 }

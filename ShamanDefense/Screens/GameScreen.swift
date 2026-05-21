@@ -25,6 +25,8 @@ struct GameScreen: View {
     @State private var isPaused = false
     @State private var gameOver: GameOverOverlayData? = nil
     @State private var currentSpirit: Int = 10
+    var onMainMenu: (() -> Void)? = nil
+
 
     var body: some View {
         GeometryReader { geo in
@@ -34,7 +36,9 @@ struct GameScreen: View {
                 SpriteView(scene: scene, debugOptions: [.showsFPS, .showsPhysics, .showsNodeCount])
                     .frame(width: geo.size.width, height: geo.size.height)
                     .ignoresSafeArea()
-
+                    .onAppear {
+                                scene.onMainMenu = onMainMenu
+                            }
                 VStack {
                     Spacer()
                     CharacterTray(
@@ -72,7 +76,7 @@ struct GameScreen: View {
                             scene.pauseComponent?.isPaused = false
                         },
                         onMainMenu: {
-                            // TODO: navigate to main menu
+                            onMainMenu?()// TODO: navigate to main menu
                         }
                     )
                     .zIndex(11)
@@ -99,7 +103,8 @@ struct GameScreen: View {
                         isPaused.toggle()
                         scene.pauseComponent?.isPaused = isPaused
                     }
-                    .padding()
+                    .padding(.trailing, 20)
+                    .padding(.top, 32)
                 }
 
                 if let drag = dragging, drag.location.y < dropZoneHeight {

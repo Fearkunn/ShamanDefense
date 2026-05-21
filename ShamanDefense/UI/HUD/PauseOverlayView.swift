@@ -52,7 +52,6 @@ struct PauseOverlayView: View {
                             .foregroundStyle(Color(white: 0.2))
                     }
                 }
-                .buttonStyle(GameButtonStyle())
 
                 Button(action: { onMainMenu?() }) {
                     ZStack {
@@ -64,19 +63,10 @@ struct PauseOverlayView: View {
                             .foregroundStyle(Color(white: 0.2))
                     }
                 }
-                .buttonStyle(GameButtonStyle())
             }
             .padding(.top, 96)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-    }
-}
-
-private struct GameButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .scaleEffect(configuration.isPressed ? 0.94 : 1.0)
-            .animation(.easeInOut(duration: 0.05), value: configuration.isPressed)
     }
 }
 
