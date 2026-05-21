@@ -68,12 +68,70 @@ final class SoundManager {
         }
     }
     
+    func playUISFX(_ name: String) {
+
+        guard let url = Bundle.main.url(
+            forResource: name,
+            withExtension: nil
+        ) else {
+
+            print("SFX not found:", name)
+            return
+        }
+
+        guard let player = try? AVAudioPlayer(
+            contentsOf: url
+        ) else {
+            return
+        }
+
+        player.volume = sfxVolume
+        player.play()
+
+        activeSFXPlayers.removeAll {
+            !$0.isPlaying
+        }
+
+        activeSFXPlayers.append(player)
+    }
+    
     func setBGMVolume(_ volume: Float) {
         bgmPlayer?.volume = max(0, min(1, volume))
     }
     
     func setSFXVolume(_ volume: Float) {
         sfxVolume = max(0, min(1, volume))
+    }
+    
+    func fadeBGM(
+        to volume: Float,
+        duration: TimeInterval = 0.5
+    ) {
+
+        guard let player = bgmPlayer else {
+            return
+        }
+
+        let startVolume = player.volume
+        let steps = 20
+
+        for step in 0...steps {
+
+            let delay =
+                duration / Double(steps) * Double(step)
+
+            DispatchQueue.main.asyncAfter(
+                deadline: .now() + delay
+            ) {
+
+                let progress =
+                    Float(step) / Float(steps)
+
+                player.volume =
+                    startVolume +
+                    (volume - startVolume) * progress
+            }
+        }
     }
 
 }
