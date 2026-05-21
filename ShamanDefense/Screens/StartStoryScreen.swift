@@ -22,6 +22,7 @@ private extension View {
 
 struct StartStoryScreen: View {
     let onFinish: () -> Void
+    private let hasStartedDefendingKey = "ShamanDefense_HasStartedDefending"
     
     @State private var pageIndex = 0
     @State private var visibleCharacterCount = 0
@@ -135,6 +136,7 @@ struct StartStoryScreen: View {
     
     private var startDefendingButton: some View {
         Button {
+            UserDefaults.standard.set(true, forKey: hasStartedDefendingKey)
             onFinish()
         }
         label: {

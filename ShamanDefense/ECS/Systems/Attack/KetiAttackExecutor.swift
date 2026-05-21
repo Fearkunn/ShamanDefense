@@ -54,6 +54,7 @@ struct KetiAttackExecutor: GhostAttackExecutor {
             )
         } else if health.isAlive,
                   context.target.component(ofType: SpriteComponent.self)?.node.parent != nil {
+            context.scene.playHumanHitFlash(on: context.target, color: context.launcher.color)
             health.takeDamage(context.launcher.damage)
         }
     }

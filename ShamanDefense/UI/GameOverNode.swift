@@ -63,19 +63,15 @@ final class GameOverNode: SKNode {
         scoreLabel.zPosition = 2
         panel.addChild(scoreLabel)
         
-        if !isFirstPlay {
-            
-            let hsLabel = GameLabelNode(
-                text: "HIGH SCORE: \(highScore)",
-                fontSize: 25
-            )
-            
-            hsLabel.position = CGPoint(x: 0, y: 25)
-            
-            hsLabel.zPosition = 2
-            
-            panel.addChild(hsLabel)
-        }
+        let displayedHighScore = isFirstPlay ? score : highScore
+        let hsLabel = GameLabelNode(
+            text: "HIGH SCORE: \(displayedHighScore)",
+            fontSize: 25
+        )
+        
+        hsLabel.position = CGPoint(x: 0, y: 25)
+        hsLabel.zPosition = 2
+        panel.addChild(hsLabel)
         
         let retryButton = GameButtonNode(
             text: "retry",
