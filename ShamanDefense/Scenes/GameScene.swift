@@ -374,30 +374,6 @@ final class GameScene: SKScene {
         }
     }
 
-    private func playHeadbuttHitReaction(on target: GameEntity) {
-        guard let root = target.component(ofType: SpriteComponent.self)?.node,
-              let body = root.children.first(where: { $0 is SKSpriteNode }) as? SKSpriteNode else { return }
-        body.removeAction(forKey: "headbutt_hit")
-        body.run(
-            .sequence([
-                .group([
-                    .moveBy(x: 5, y: 1, duration: 0.05),
-                    .rotate(byAngle: .pi / 18, duration: 0.05)
-                ]),
-                .group([
-                    .moveBy(x: -7, y: -1, duration: 0.06),
-                    .rotate(byAngle: -.pi / 12, duration: 0.06)
-                ]),
-                .group([
-                    .moveTo(x: 0, duration: 0.04),
-                    .moveTo(y: 0, duration: 0.04),
-                    .rotate(toAngle: 0, duration: 0.04)
-                ])
-            ]),
-            withKey: "headbutt_hit"
-        )
-    }
-    
     func playHeadbuttHitReaction(on target: GameEntity) {
         guard let root = target.component(ofType: SpriteComponent.self)?.node,
               let body = root.children.first(where: { $0 is SKSpriteNode }) as? SKSpriteNode else { return }
@@ -699,6 +675,47 @@ final class GameScene: SKScene {
 
         counter.addChild(label)
         spiritLabel = label
+    }
+
+    private func buildScoreLabel() {
+        let hangingHandle = SKSpriteNode(imageNamed: "hanging_score")
+        hangingHandle.zPosition = 100
+        hangingHandle.size = CGSize(width: 150, height: 92)
+        let handleHalfHeight = hangingHandle.size.height / 2
+        hangingHandle.position = CGPoint(
+            x: size.width / 2,
+            y: size.height - handleHalfHeight
+        )
+        hudLayer.addChild(hangingHandle)
+
+        let scoreBoard = SKSpriteNode(imageNamed: "board_score")
+        scoreBoard.zPosition = 101
+        scoreBoard.size = CGSize(width: 150, height: 56)
+        scoreBoard.position = CGPoint(x: 0, y: -40)
+        hangingHandle.addChild(scoreBoard)
+
+        let titleLabel = GameLabelNode(
+            text: "Score:",
+            fontSize: 10
+        )
+        titleLabel.position = CGPoint(
+            x: 0,
+            y: 15
+        )
+        titleLabel.zPosition = 102
+        scoreBoard.addChild(titleLabel)
+
+        scoreLabel = GameLabelNode(
+            text: "0",
+            fontSize: 40
+        )
+
+        scoreLabel.position = CGPoint(
+            x: 0,
+            y: -7
+        )
+        scoreLabel.zPosition = 102
+        scoreBoard.addChild(scoreLabel)
     }
 
     func updateSpirit(_ value: Int) {
