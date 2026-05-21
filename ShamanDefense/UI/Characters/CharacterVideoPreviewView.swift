@@ -67,7 +67,7 @@ struct CharacterVideoPreviewView: View {
         .onAppear {
             configurePlayer()
         }
-        .onChange(of: character.id) { _ in
+        .onChange(of: character.id) {
             configurePlayer()
         }
         .onDisappear {
