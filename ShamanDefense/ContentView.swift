@@ -27,7 +27,7 @@ struct ContentView: View {
     
     // Buat scene sekali, simpan di State supaya tidak re-create saat view rebuild
     @State private var menuScene: MainMenuScene = {
-        let scene = MainMenuScene(size: UIScreen.main.bounds.size)
+        let scene = MainMenuScene(size: .zero)
         scene.scaleMode = .aspectFill
         return scene
     }()
