@@ -72,7 +72,8 @@ struct GameScreen: View {
                         isPaused.toggle()
                         scene.pauseComponent?.isPaused = isPaused
                     }
-                    .padding()
+                    .padding(.trailing, 20)
+                    .padding(.top, 32)
                 }
 
                 if let drag = dragging, drag.location.y < dropZoneHeight {

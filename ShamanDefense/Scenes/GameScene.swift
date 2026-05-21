@@ -29,9 +29,9 @@ final class GameScene: SKScene {
     let fxLayer = SKNode()
     let hudLayer = SKNode()
     
-    private var scoreLabel: GameLabelNode!
-    private var spiritLabel: GameLabelNode?
-    private var spiritCounterNode: SKSpriteNode?
+    var scoreLabel: GameLabelNode!
+    var spiritLabel: GameLabelNode?
+    var spiritCounterNode: SKSpriteNode?
     private var gameOverNode: GameOverNode?
     private var waveManagerEntity: WaveManagerEntity?
     private(set) var isGameOver = false
@@ -39,7 +39,7 @@ final class GameScene: SKScene {
     var onIntermission: ((Int) -> Void)?
     var onWaveStart: ((Int) -> Void)?
     
-    private var currentSpirit: Int = 6
+    var currentSpirit: Int = 6
     private var hasPlayedWaveSpawnSound = false
     
     override init() {
@@ -219,42 +219,6 @@ final class GameScene: SKScene {
     }
     
     // MARK: - Score / game over
-    
-    private func buildScoreLabel() {
-        
-        let hangingBoard = SKSpriteNode(imageNamed: "hanging_score")
-        hangingBoard.zPosition = 100
-        hangingBoard.size = CGSize(width: 200, height: 100)
-        
-        hangingBoard.position = CGPoint(
-            x: size.width / 2,
-            y: size.height - 40
-        )
-        hudLayer.addChild(hangingBoard)
-        
-        let titleLabel = GameLabelNode(
-            text: "Score:",
-            fontSize: 10
-        )
-        titleLabel.position = CGPoint(
-            x: 0,
-            y: -2
-        )
-        titleLabel.zPosition = 101
-        hangingBoard.addChild(titleLabel)
-        
-        scoreLabel = GameLabelNode(
-            text: "0",
-            fontSize: 40
-        )
-        
-        scoreLabel.position = CGPoint(
-            x: 0,
-            y: -25
-        )
-        scoreLabel.zPosition = 101
-        hangingBoard.addChild(scoreLabel)
-    }
     
     func humanDefeated() {
         guard !isGameOver, let score = registry.score else { return }
@@ -588,9 +552,7 @@ final class GameScene: SKScene {
                         "yayang_attack.wav",
                         on: self
                     )
-                    sm.stateMachine.enter(
-                        YayangTriggeredState.self
-                    )
+                    self.playYayangPlacementSequence(entity)
                     
                 case .yuyul:
                     SoundManager.shared.playSFX(
@@ -605,10 +567,6 @@ final class GameScene: SKScene {
             }
         }
         installEntity(entity, in: trapsLayer)
-
-        if character.id == .yayang {
-            playYayangPlacementSequence(entity)
-        }
     }
 
     private func playYayangPlacementSequence(_ entity: TrapEntity) {
@@ -666,13 +624,13 @@ final class GameScene: SKScene {
         sequence.timingMode = .easeInEaseOut
         root.run(sequence, withKey: "yayang_placement_sequence")
     }
-    
+
     private func setupMapUI() {
         guard let path = registry.path else { return }
         let endPoint = path.waypoints.last ?? .zero
         let dukunOffset = CGPoint(x: 0, y: -20)
         let counterOffset = CGPoint(x: -5, y: -70)
-        
+
         let dukun = SKSpriteNode(imageNamed: "shaman")
         dukun.setScale(0.8)
         dukun.position = CGPoint(
@@ -681,13 +639,13 @@ final class GameScene: SKScene {
         )
         dukun.zPosition = 10
         mapLayer.addChild(dukun)
-        
+
         let float = SKAction.sequence([
             .moveBy(x: 0, y: 10, duration: 1),
             .moveBy(x: 0, y: -10, duration: 1)
         ])
         dukun.run(.repeatForever(float))
-        
+
         let counter = SKSpriteNode(imageNamed: "spirit_counter")
         counter.size = CGSize(width: 110, height: 50)
         counter.position = CGPoint(
@@ -696,9 +654,9 @@ final class GameScene: SKScene {
         )
         counter.zPosition = 11
         mapLayer.addChild(counter)
-        
+
         spiritCounterNode = counter
-        
+
         let label = GameLabelNode(
             text: "0",
             fontSize: 20,
@@ -706,39 +664,34 @@ final class GameScene: SKScene {
         )
         label.zPosition = 12
         label.position = CGPoint(x: 5, y: 3)
-        
+
         counter.addChild(label)
-        
         spiritLabel = label
     }
-    
+
     func updateSpirit(_ value: Int) {
         spiritLabel?.text = "\(value)"
-        
+
         spiritCounterNode?.run(.sequence([
             .scale(to: 1.15, duration: 0.08),
             .scale(to: 1.0, duration: 0.08)
         ]))
     }
-    
+
     private func addSpirit(_ amount: Int) {
         currentSpirit += amount
         updateSpirit(currentSpirit)
     }
-    
+
     @discardableResult
     private func spendSpirit(_ amount: Int) -> Bool {
-        
         guard currentSpirit >= amount else {
             return false
         }
-        
+
         currentSpirit -= amount
         updateSpirit(currentSpirit)
-        
         return true
     }
-    
-    
-    
+
 }
