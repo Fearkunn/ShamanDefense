@@ -25,6 +25,7 @@ struct GameOverOverlayView: View {
             let titleW = geo.size.width * 0.72
             let titleH = titleW * 0.67
             let labelColor = Color(white: 0.25)
+            let displayedHighScore = data.isFirstPlay ? data.score : data.highScore
 
             ZStack {
                 // Panel
@@ -47,12 +48,10 @@ struct GameOverOverlayView: View {
                                 .position(x: panelW / 2, y: panelH / 2 - 105)
 
                             // High score
-                            if !data.isFirstPlay {
-                                Text("HIGH SCORE: \(data.highScore)")
-                                    .font(.custom("Newyear Coffee", size: 25))
-                                    .foregroundStyle(labelColor)
-                                    .position(x: panelW / 2, y: panelH / 2 - 45)
-                            }
+                            Text("HIGH SCORE: \(displayedHighScore)")
+                                .font(.custom("Newyear Coffee", size: 25))
+                                .foregroundStyle(labelColor)
+                                .position(x: panelW / 2, y: panelH / 2 - 45)
 
                             // Retry button (y = -55 from panel center → panelH/2 + 55 from top)
                             overlayButton(text: "retry",
