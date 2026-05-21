@@ -16,7 +16,7 @@ class MainMenuScene: SKScene {
     var onStartGame: (() -> Void)?
     var onOpenCharacters: (() -> Void)?
 
-    private var optionPopup: OptionPopupNode?
+    private var optionPopup: OptionScenePopupNode?
 
     // MARK: - Lifecycle
 
@@ -172,6 +172,65 @@ class MainMenuScene: SKScene {
             withKey: "wobble"
         )
     }
+    
+    private func startBreathingAnimation(on node: SKSpriteNode) {
+
+        // MARK: - Scale Animation
+
+        let breatheIn = SKAction.scale(
+            to: 1.01,
+            duration: 1.4
+        )
+
+        breatheIn.timingMode = .easeInEaseOut
+
+        let breatheOut = SKAction.scale(
+            to: 1.0,
+            duration: 1.4
+        )
+
+        breatheOut.timingMode = .easeInEaseOut
+
+        // MARK: - Floating Animation
+
+        let moveUp = SKAction.moveBy(
+            x: 0,
+            y: 6,
+            duration: 0.5
+        )
+
+        moveUp.timingMode = .easeInEaseOut
+
+        let moveDown = SKAction.moveBy(
+            x: 0,
+            y: -6,
+            duration: 0.5
+        )
+
+        moveDown.timingMode = .easeInEaseOut
+
+        // MARK: - Combine
+
+        let breatheGroup = SKAction.group([
+            breatheIn,
+            moveUp
+        ])
+
+        let relaxGroup = SKAction.group([
+            breatheOut,
+            moveDown
+        ])
+
+        let sequence = SKAction.sequence([
+            breatheGroup,
+            relaxGroup
+        ])
+
+        node.run(
+            SKAction.repeatForever(sequence),
+            withKey: "breathing"
+        )
+    }
     // MARK: - Start Button
 
     private func setupStartButton() {
@@ -209,12 +268,26 @@ class MainMenuScene: SKScene {
     // MARK: - Main Character
 
     private func setupCharacter() {
-        let character = SKSpriteNode(imageNamed: "gugun_mainMenu")
-        character.position = CGPoint(x: size.width / 2, y: size.height * 0.10)
-        character.size = CGSize(width: 280, height: 480)
-        addChild(character)
-    }
 
+        let character = SKSpriteNode(imageNamed: "gugun_mainMenu")
+
+        character.position = CGPoint(
+            x: size.width / 2,
+            y: size.height * 0.10
+        )
+
+        character.size = CGSize(
+            width: 280,
+            height: 480
+        )
+
+        character.zPosition = 0
+
+        addChild(character)
+
+        startBreathingAnimation(on: character)
+    }
+    
     // MARK: - Navigation
 
     private func goToGame() {
@@ -253,13 +326,19 @@ class MainMenuScene: SKScene {
     // MARK: - Option Popup
 
     private func showOptionPopup() {
-        let popup = OptionPopupNode(sceneSize: size)
+
+        let popup = OptionScenePopupNode(
+            viewModel: OptionViewModel.shared,
+            sceneSize: size
+        )
+
         popup.delegate = self
         popup.zPosition = 99
+
         addChild(popup)
+
         optionPopup = popup
     }
-
     private func closeOptionPopup() {
         optionPopup?.removeFromParent()
         optionPopup = nil
@@ -307,12 +386,15 @@ class MainMenuScene: SKScene {
 
 // MARK: - OptionPopupDelegate
 
-extension MainMenuScene: OptionPopupDelegate {
-    func optionPopupDidRequestClose(_ popup: OptionPopupNode) {
+extension MainMenuScene: OptionScenePopupDelegate {
+
+    func optionPopupDidRequestClose(
+        _ popup: OptionScenePopupNode
+    ) {
+
         closeOptionPopup()
     }
 }
-
 // MARK: - Preview
 
 #Preview {
