@@ -20,6 +20,7 @@ struct PociAttackExecutor: GhostAttackExecutor {
                 color: context.launcher.color
             )
         } else {
+            context.scene.playHumanHitFlash(on: context.target, color: context.launcher.color)
             health.takeDamage(context.launcher.damage)
             context.scene.playHeadbuttHitReaction(on: context.target)
         }
