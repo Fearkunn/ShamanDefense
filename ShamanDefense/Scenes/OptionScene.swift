@@ -193,6 +193,11 @@ class OptionScenePopupNode: SKNode {
         case "close_popup":
             delegate?.optionPopupDidRequestClose(self)
             
+        case "haptic_switch":
+            optionViewModel.hapticEnabled.toggle()
+            hapticSwitchNode?.texture = SKTexture(imageNamed: hapticSwitchImageName)
+            HapticManager.shared.impact(.medium)
+
         case "music_knob", "sound_knob":
             break // Ditangani di handleTouchMoved
 

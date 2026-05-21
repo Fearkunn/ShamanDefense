@@ -22,6 +22,7 @@ private extension View {
 
 struct StartStoryScreen: View {
     let onFinish: () -> Void
+    private let hasStartedDefendingKey = "ShamanDefense_HasStartedDefending"
     
     @State private var pageIndex = 0
     @State private var visibleCharacterCount = 0
@@ -116,6 +117,12 @@ struct StartStoryScreen: View {
                 .allowsHitTesting(false)
             }
         }
+        .onAppear {
+            SoundManager.shared.fadeBGM(
+                to: 0.1,
+                duration: 1.0
+            )
+        }
         .contentShape(Rectangle())
         .onTapGesture {
             if !isTypingCompleted {
@@ -135,6 +142,12 @@ struct StartStoryScreen: View {
     
     private var startDefendingButton: some View {
         Button {
+            SoundManager.shared.fadeBGM(
+                to: OptionViewModel.shared.backgroundMusic,
+                duration: 1.0
+            )
+            
+            UserDefaults.standard.set(true, forKey: hasStartedDefendingKey)
             onFinish()
         }
         label: {
@@ -156,12 +169,28 @@ struct StartStoryScreen: View {
     
     private func typeCurrentStoryText() async {
         visibleCharacterCount = 0
+
         let total = currentStoryCharacters.count
         guard total > 0 else { return }
-        
+
         for index in 1...total {
+
             visibleCharacterCount = index
-            try? await Task.sleep(nanoseconds: 30_000_000)
+
+            let character = currentStoryCharacters[index - 1]
+            
+            if character != " " && character != "\n" {
+
+                if index % 3 == 0 {
+                    SoundManager.shared.playUISFX(
+                        "typing.wav"
+                    )
+                }
+            }
+
+            try? await Task.sleep(
+                nanoseconds: 30_000_000
+            )
         }
     }
 }

@@ -20,16 +20,18 @@ enum AppScreen {
 // MARK: - ContentView
 
 struct ContentView: View {
-
+    
     @State private var screen: AppScreen = .mainMenu
-
+    private let highScoreKey = "ShamanDefense_HighScore"
+    private let hasStartedDefendingKey = "ShamanDefense_HasStartedDefending"
+    
     // Buat scene sekali, simpan di State supaya tidak re-create saat view rebuild
     @State private var menuScene: MainMenuScene = {
-        let scene = MainMenuScene(size: UIScreen.main.bounds.size)
+        let scene = MainMenuScene(size: .zero)
         scene.scaleMode = .aspectFill
         return scene
     }()
-
+    
     var body: some View {
         Group {
             switch screen {
@@ -41,9 +43,17 @@ struct ContentView: View {
                         .onAppear {
                             // Update ukuran scene sesuai layar aktual
                             menuScene.size = geo.size
+                            
                             // Sambungkan callback Start ke sini
                             menuScene.onStartGame = {
-                                screen = .story
+                                let savedHighScore = UserDefaults.standard.integer(forKey: highScoreKey)
+                                let hasStartedDefending = UserDefaults.standard.bool(forKey: hasStartedDefendingKey)
+
+                                if hasStartedDefending {
+                                    screen = .game
+                                } else {
+                                    screen = savedHighScore == 0 ? .story : .game
+                                }
                             }
                             menuScene.onOpenCharacters = {
                                 screen = .characters
@@ -74,5 +84,6 @@ struct ContentView: View {
             }
         }
         .animation(.easeInOut(duration: 0.4), value: screen)
+        .onAppear { SoundManager.shared.playBGM ("bgm.mp3") }
     }
 }
