@@ -8,7 +8,9 @@
 import SwiftUI
 
 struct CharactersScreen: View {
-    @Environment(\.dismiss) private var dismiss
+
+    var onBack: (() -> Void)?
+    
     @State private var selectedCharacter: CharacterData = GameCollection.allCharacters.first ?? CharacterData(
         id: .keti,
         name: "Keti",
@@ -64,17 +66,19 @@ struct CharactersScreen: View {
     private var topBar: some View {
         HStack(spacing: 10) {
             Button {
-                dismiss()
+                onBack?()
             } label: {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(.white)
-                    .frame(width: 36, height: 36)
-                    .background(Circle().fill(Color.white.opacity(0.18)))
+                Image("continue")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 60, height: 60)
+                    .scaleEffect(x: -1, y: 1)
             }
 
             Spacer()
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.leading, 50)
     }
 }
 
