@@ -374,30 +374,6 @@ final class GameScene: SKScene {
         }
     }
 
-    private func playHeadbuttHitReaction(on target: GameEntity) {
-        guard let root = target.component(ofType: SpriteComponent.self)?.node,
-              let body = root.children.first(where: { $0 is SKSpriteNode }) as? SKSpriteNode else { return }
-        body.removeAction(forKey: "headbutt_hit")
-        body.run(
-            .sequence([
-                .group([
-                    .moveBy(x: 5, y: 1, duration: 0.05),
-                    .rotate(byAngle: .pi / 18, duration: 0.05)
-                ]),
-                .group([
-                    .moveBy(x: -7, y: -1, duration: 0.06),
-                    .rotate(byAngle: -.pi / 12, duration: 0.06)
-                ]),
-                .group([
-                    .moveTo(x: 0, duration: 0.04),
-                    .moveTo(y: 0, duration: 0.04),
-                    .rotate(toAngle: 0, duration: 0.04)
-                ])
-            ]),
-            withKey: "headbutt_hit"
-        )
-    }
-    
     func playHeadbuttHitReaction(on target: GameEntity) {
         guard let root = target.component(ofType: SpriteComponent.self)?.node,
               let body = root.children.first(where: { $0 is SKSpriteNode }) as? SKSpriteNode else { return }

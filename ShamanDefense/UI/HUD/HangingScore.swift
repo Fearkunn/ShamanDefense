@@ -7,8 +7,6 @@ import SpriteKit
 
 extension GameScene {
     func buildScoreLabel() {
-        let safeTop = view?.safeAreaInsets.top ?? 0
-
         let hangingHandle = SKSpriteNode(imageNamed: "hanging_score")
         hangingHandle.zPosition = 100
         hangingHandle.size = CGSize(width: 150, height: 92)
