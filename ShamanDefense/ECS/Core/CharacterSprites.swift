@@ -9,6 +9,21 @@ enum CharacterSprites {
     static let spriteHeight: CGFloat = 36
     static var renderHeight: CGFloat = spriteHeight
 
+    static func makeGhostAura(yOffset: CGFloat) -> SKShapeNode {
+        let aura = SKShapeNode(
+            ellipseOf: CGSize(
+                width: GhostMetrics.diameter + 6,
+                height: (GhostMetrics.diameter + 6) * 0.38
+            )
+        )
+        aura.fillColor = .black
+        aura.strokeColor = .clear
+        aura.alpha = 0.20
+        aura.position = CGPoint(x: 0, y: yOffset)
+        aura.zPosition = 0
+        return aura
+    }
+
     static func texture(for id: GhostID, facing: FacingDirection) -> SKTexture {
         SKTexture(imageNamed: assetName(for: id, facing: facing))
     }

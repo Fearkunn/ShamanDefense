@@ -96,7 +96,7 @@ final class TowerFiringState: GameState {
                     .run {
                         let puffPoint = CGPoint(
                             x: sprite.position.x + (facingX < 0 ? 10 : -10),
-                            y: sprite.position.y + CharacterSprites.spriteHeight * 0.34
+                            y: sprite.position.y + CharacterSprites.renderHeight * 0.85
                         )
                         for offset in [-7.0, -2.0, 2.0, 7.0] {
                             let puff = SKShapeNode(circleOfRadius: 5.8)

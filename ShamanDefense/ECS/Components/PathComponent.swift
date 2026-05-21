@@ -8,11 +8,11 @@ import CoreGraphics
 
 final class PathComponent: GKComponent {
     let waypoints: [CGPoint]
-    let halfWidth: CGFloat
+    let tileRects: [CGRect]
 
-    init(waypoints: [CGPoint], halfWidth: CGFloat) {
+    init(waypoints: [CGPoint], tileRects: [CGRect] = []) {
         self.waypoints = waypoints
-        self.halfWidth = halfWidth
+        self.tileRects = tileRects
         super.init()
     }
 
