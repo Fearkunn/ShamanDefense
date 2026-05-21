@@ -82,10 +82,10 @@ struct GugunAttackExecutor: GhostAttackExecutor {
                 } else if let target,
                           let health = target.component(ofType: HealthComponent.self),
                           health.isAlive {
+                    scene.playHumanHitFlash(on: target, color: context.launcher.color)
                     health.takeDamage(context.launcher.damage)
                 }
             }
         ]))
     }
 }
-
