@@ -11,6 +11,8 @@ final class SoundManager {
     static let shared = SoundManager()
     
     private var bgmPlayer: AVAudioPlayer?
+    private var activeSFXPlayers: [AVAudioPlayer] = []
+    private var sfxVolume: Float = 1.0
     
     private init() {}
     
@@ -19,14 +21,20 @@ final class SoundManager {
         on node: SKNode,
         wait: Bool = false
     ) {
-        node.run(
-            .playSoundFileNamed(
-                name,
-                waitForCompletion: wait
-            )
-        )
-    }
-    
+        guard let url = Bundle.main.url(forResource: name, withExtension: nil) else {
+                    print("SFX not found:", name)
+                    return
+                }
+                guard let player = try? AVAudioPlayer(contentsOf: url) else { return }
+
+                player.volume = sfxVolume
+                player.play()
+
+                // Simpan referensi agar tidak langsung di-deallocate, bersihkan yang sudah selesai
+                activeSFXPlayers.removeAll { !$0.isPlaying }
+                activeSFXPlayers.append(player)
+            }
+
     func playBGM(
         _ name: String,
         volume: Float = 0.5
@@ -61,6 +69,11 @@ final class SoundManager {
     }
     
     func setBGMVolume(_ volume: Float) {
-        bgmPlayer?.volume = volume
+        bgmPlayer?.volume = max(0, min(1, volume))
     }
+    
+    func setSFXVolume(_ volume: Float) {
+        sfxVolume = max(0, min(1, volume))
+    }
+
 }
