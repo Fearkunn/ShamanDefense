@@ -19,13 +19,13 @@ final class TrapEntity: GameEntity {
 
         let texture = CharacterSprites.texture(for: character.id, facing: .down)
         let sprite = SKSpriteNode(texture: texture, size: CharacterSprites.size(for: texture))
-        let root = SKNode()
         sprite.zPosition = 1
+        let root = SKNode()
+        root.addChild(CharacterSprites.makeGhostAura(yOffset: -sprite.size.height / 2))
         root.addChild(sprite)
         addComponent(SpriteComponent(node: root))
         addComponent(DirectionalSpriteComponent(sprite: sprite, id: character.id))
         addComponent(TeamComponent(team: .ghost))
-        addComponent(PlacementBlockerComponent(radius: GhostMetrics.diameter / 2))
         addComponent(ProximityTriggerComponent(triggerRadius: stats.triggerRadius))
 
         var states: [GKState] = [TrapArmedState(), TrapSpentState()]

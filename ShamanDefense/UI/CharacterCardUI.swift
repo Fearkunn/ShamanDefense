@@ -40,29 +40,10 @@ struct CharacterCardUI: View {
                     let fraction = total > 0 ? remaining / total : 0
                     
                     if remaining > 0 {
-                        ZStack {
-                            // Dark glassmorphic background overlay
-                            Color.black.opacity(0.65)
-                            
-                            // Circular sweep timer
-                            Circle()
-                                .trim(from: 0, to: fraction)
-                                .stroke(
-                                    LinearGradient(
-                                        colors: [.orange, .red, .pink],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    ),
-                                    style: StrokeStyle(lineWidth: 3.5, lineCap: .round)
-                                )
-                                .rotationEffect(.degrees(-90))
-                                .frame(width: 44, height: 44)
-                            
-                            // Remaining time text
-                            Text(String(format: "%.1fs", remaining))
-                                .font(.custom("Newyear Coffee", size: 14))
-                                .foregroundColor(.white)
-                                .shadow(color: .black, radius: 2)
+                        GeometryReader { geo in
+                            Color.black.opacity(0.6)
+                                .frame(width: geo.size.width, height: geo.size.height * CGFloat(fraction))
+                                .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
                         }
                     }
                 }
