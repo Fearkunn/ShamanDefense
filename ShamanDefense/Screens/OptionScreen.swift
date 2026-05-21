@@ -48,15 +48,9 @@ class OptionViewModel: ObservableObject {
         self.backgroundMusic = music
         self.soundEffect     = sound
         self.hapticEnabled   = haptic
-<<<<<<< HEAD
 
         SoundManager.shared.setBGMVolume(music)
         SoundManager.shared.setSFXVolume(sound)
         HapticManager.shared.isEnabled = haptic
-=======
-        
-        SoundManager.shared.setBGMVolume(music)
-        SoundManager.shared.setSFXVolume(sound)
->>>>>>> testing
     }
 }
