@@ -189,13 +189,6 @@ class OptionScenePopupNode: SKNode {
 
     func handleTouchBegan(at location: CGPoint, touchedNode: SKNode) {
         switch touchedNode.name {
-
-        case "haptic_switch":
-            optionViewModel.hapticEnabled.toggle()
-            hapticSwitchNode?.texture = SKTexture(imageNamed: hapticSwitchImageName)
-            if optionViewModel.hapticEnabled {
-                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-            }
             
         case "close_popup":
             delegate?.optionPopupDidRequestClose(self)
