@@ -74,5 +74,6 @@ struct ContentView: View {
             }
         }
         .animation(.easeInOut(duration: 0.4), value: screen)
+        .onAppear { SoundManager.shared.playBGM ("bgm.mp3") }
     }
 }

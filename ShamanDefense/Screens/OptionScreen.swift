@@ -32,7 +32,9 @@ class OptionViewModel: ObservableObject {
     }
     
     @Published var hapticEnabled: Bool {
-        didSet { UserDefaults.standard.set(hapticEnabled, forKey: "hapticEnabled") }
+        didSet { UserDefaults.standard.set(hapticEnabled, forKey: "hapticEnabled")
+            HapticManager.shared.isEnabled = hapticEnabled
+        }
     }
     
     // MARK: - Init
@@ -46,8 +48,15 @@ class OptionViewModel: ObservableObject {
         self.backgroundMusic = music
         self.soundEffect     = sound
         self.hapticEnabled   = haptic
+<<<<<<< HEAD
+
+        SoundManager.shared.setBGMVolume(music)
+        SoundManager.shared.setSFXVolume(sound)
+        HapticManager.shared.isEnabled = haptic
+=======
         
         SoundManager.shared.setBGMVolume(music)
         SoundManager.shared.setSFXVolume(sound)
+>>>>>>> testing
     }
 }

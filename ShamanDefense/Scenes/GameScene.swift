@@ -248,9 +248,7 @@ final class GameScene: SKScene {
             on: self
         )
         
-        let generator = UINotificationFeedbackGenerator()
-        generator.prepare()
-        generator.notificationOccurred(.error)
+        HapticManager.shared.notification(.error)
         
         if let waveManager = waveManagerEntity {
             waveManager.component(ofType: WaveManagerComponent.self)?.stop()
