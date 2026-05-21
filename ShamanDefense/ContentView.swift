@@ -14,6 +14,7 @@ enum AppScreen {
     case mainMenu
     case story
     case game
+    case characters
 }
 
 // MARK: - ContentView
@@ -44,6 +45,10 @@ struct ContentView: View {
                             menuScene.onStartGame = {
                                 screen = .story
                             }
+                            menuScene.onOpenCharacters = {
+                                screen = .characters
+                            }
+
                         }
                 }
                 .ignoresSafeArea()
@@ -58,8 +63,17 @@ struct ContentView: View {
                     menuScene.updateScoreBoard()
                     screen = .mainMenu
                 })
+                
+            case .characters:
+                CharactersScreen(
+                    onBack: {
+                                screen = .mainMenu
+                            }
+                )
+                
             }
         }
         .animation(.easeInOut(duration: 0.4), value: screen)
+        .onAppear { SoundManager.shared.playBGM ("bgm.mp3") }
     }
 }

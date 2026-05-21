@@ -192,9 +192,7 @@ class OptionScenePopupNode: SKNode {
         case "haptic_switch":
             optionViewModel.hapticEnabled.toggle()
             hapticSwitchNode?.texture = SKTexture(imageNamed: hapticSwitchImageName)
-            if optionViewModel.hapticEnabled {
-                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-            }
+            HapticManager.shared.impact(.medium)
 
         case "music_knob", "sound_knob":
             break // Ditangani di handleTouchMoved

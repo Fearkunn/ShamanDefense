@@ -23,8 +23,11 @@ struct GameScreen: View {
     @State private var dragging: (character: CharacterData, location: CGPoint)? = nil
     @State private var waveWarning: WaveWarningBannerData? = nil
     @State private var isPaused = false
+    @State private var gameOver: GameOverOverlayData? = nil
+    @State private var currentSpirit: Int = 10
     var onMainMenu: (() -> Void)? = nil
-    
+
+
     var body: some View {
         GeometryReader { geo in
             let dropZoneHeight = geo.size.height - trayHeight
@@ -34,12 +37,13 @@ struct GameScreen: View {
                     .frame(width: geo.size.width, height: geo.size.height)
                     .ignoresSafeArea()
                     .onAppear {
-                                scene.onGoToMainMenu = onMainMenu  // sambungkan di sini
+                                scene.onMainMenu = onMainMenu
                             }
                 VStack {
                     Spacer()
                     CharacterTray(
                         selected: $selected,
+                        currentSpirit: currentSpirit,
                         coordSpace: gameCoordSpace,
                         onDragChanged: { character, location in
                             dragging = (character, location)
@@ -57,6 +61,14 @@ struct GameScreen: View {
                     ).padding(.bottom, 30).padding(.horizontal, 10)
                 }
 
+                if isPaused || gameOver != nil || waveWarning != nil {
+                    Color.black.opacity(0.55)
+                        .ignoresSafeArea()
+                        .transition(.opacity)
+                        .zIndex(8)
+                        .allowsHitTesting(isPaused || gameOver != nil)
+                }
+
                 if isPaused {
                     PauseOverlayView(
                         onContinue: {
@@ -67,6 +79,22 @@ struct GameScreen: View {
                             onMainMenu?()// TODO: navigate to main menu
                         }
                     )
+                    .zIndex(11)
+                }
+
+                if let data = gameOver {
+                    GameOverOverlayView(
+                        data: data,
+                        onRetry: {
+                            gameOver = nil
+                            scene.restartGame()
+                        },
+                        onMainMenu: {
+                            gameOver = nil
+                            scene.goToMainMenu()
+                        }
+                    )
+                    .zIndex(12)
                 }
 
                 HStack {
@@ -83,39 +111,56 @@ struct GameScreen: View {
                     let liftedY = drag.location.y - dragLift
                     let scenePoint = CGPoint(x: drag.location.x, y: geo.size.height - liftedY)
                     let placeable = scene.canPlace(drag.character, at: scenePoint)
-                    DragPreview(character: drag.character, isPlaceable: placeable)
+                    DragPreview(character: drag.character,
+                                placementRadius: scene.dragIndicatorRadius(for: drag.character.kind),
+                                isPlaceable: placeable)
                         .position(x: drag.location.x, y: liftedY)
                         .opacity(0.85)
                         .allowsHitTesting(false)
                 }
 
                 if let waveWarning {
-                                    Color.black
-                                        .opacity(0.6)
-                                        .ignoresSafeArea()
-                                        .transition(.opacity)
-                                        .zIndex(9)
-
-                                    WaveWarningBanner(data: waveWarning)
-                                        .padding(.top, geo.safeAreaInsets.top + 300)
-                                        .padding(.horizontal, 16)
-                                        .transition(.move(edge: .top).combined(with: .opacity))
-                                        .zIndex(10)
-                                        .allowsHitTesting(false)
-                                }
+                    WaveWarningBanner(data: waveWarning)
+                        .padding(.horizontal, 16)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                        .zIndex(10)
+                        .allowsHitTesting(false)
+                }
             }
             .animation(.easeInOut(duration: 0.22), value: waveWarning)
+            .animation(.easeInOut(duration: 0.22), value: isPaused)
             .coordinateSpace(name: gameCoordSpace)
             .onAppear {
-                scene.onIntermission = { nextWave in
-                    showIncomingWaveWarning(waveNumber: nextWave)
-                }
-                scene.onWaveStart = { wave in
-                    currentWave = wave
-                }
+                wireSceneCallbacks()
             }
         }
         .ignoresSafeArea()
+    }
+
+    private func wireSceneCallbacks() {
+        scene.onIntermission = { nextWave in
+            showIncomingWaveWarning(waveNumber: nextWave)
+        }
+        scene.onWaveStart = { wave in
+            currentWave = wave
+        }
+        scene.onRetry = {
+            currentWave = 0
+            selected = nil
+            dragging = nil
+            waveWarning = nil
+            isPaused = false
+            gameOver = nil
+        }
+        scene.onSpiritChanged = { value in
+            currentSpirit = value
+        }
+        scene.onGameOver = { score, high, isFirst in
+            withAnimation(.easeInOut(duration: 0.22)) {
+                gameOver = GameOverOverlayData(score: score, highScore: high, isFirstPlay: isFirst)
+            }
+        }
     }
 
     private func showIncomingWaveWarning(waveNumber: Int) {

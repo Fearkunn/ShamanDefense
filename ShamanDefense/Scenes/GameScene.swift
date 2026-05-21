@@ -11,10 +11,9 @@ import UIKit
 
 final class GameScene: SKScene {
     
-    private let baseTileSize: CGFloat = 36
+    private let baseTileSize: CGFloat = 80
     private let spriteTileMultiplier: CGFloat = 3
-    private var tileSize: CGFloat = 36
-    private let minPlacementSpacing: CGFloat = GhostMetrics.diameter
+    private var tileSize: CGFloat = 80
     
     private(set) var registry: EntityRegistry
     var pauseComponent: PauseComponent? { registry.pause }
@@ -30,19 +29,20 @@ final class GameScene: SKScene {
     let hudLayer = SKNode()
     
     var scoreLabel: GameLabelNode!
-    var spiritLabel: GameLabelNode?
-    var spiritCounterNode: SKSpriteNode?
-    private var gameOverNode: GameOverNode?
+    private var shamanHUD: ShamanHUD?
     private var waveManagerEntity: WaveManagerEntity?
     private(set) var isGameOver = false
-    
-    var onGoToMainMenu: (() -> Void)?
+
     var onIntermission: ((Int) -> Void)?
     var onWaveStart: ((Int) -> Void)?
-    
-    var currentSpirit: Int = 6
+    var onRetry: (() -> Void)?
+    var onMainMenu: (() -> Void)?
+    var onGameOver: ((_ score: Int, _ highScore: Int, _ isFirstPlay: Bool) -> Void)?
+    var onSpiritChanged: ((Int) -> Void)?
+
+    private var currentSpirit: Int = 10
     private var hasPlayedWaveSpawnSound = false
-    
+
     override init() {
         let heartbeatSystem = HeartbeatSystem()
         
@@ -66,15 +66,21 @@ final class GameScene: SKScene {
     required init?(coder: NSCoder) { fatalError("init(coder:) not implemented") }
     
     
-    private func tooCloseToExisting(_ point: CGPoint) -> Bool {
-        for entity in registry.all {
-            guard let blocker = entity.component(ofType: PlacementBlockerComponent.self),
-                  let pos = entity.component(ofType: SpriteComponent.self)?.position else { continue }
-            if hypot(pos.x - point.x, pos.y - point.y) < blocker.radius + minPlacementSpacing / 2 {
+    private func towerTooCloseToExisting(_ foot: TowerFoot) -> Bool {
+        for entity in registry.towers {
+            guard let pos = entity.component(ofType: SpriteComponent.self)?.position else { continue }
+            if foot.overlaps(TowerPlacement.foot(at: pos)) {
                 return true
             }
         }
         return false
+    }
+
+    func dragIndicatorRadius(for kind: EntityKind) -> CGFloat {
+        switch kind {
+        case .tower: return TowerPlacement.radius
+        case .trap:  return TrapPlacement.visualRadius
+        }
     }
     
     override func didMove(to view: SKView) {
@@ -242,9 +248,7 @@ final class GameScene: SKScene {
             on: self
         )
         
-        let generator = UINotificationFeedbackGenerator()
-        generator.prepare()
-        generator.notificationOccurred(.error)
+        HapticManager.shared.notification(.error)
         
         if let waveManager = waveManagerEntity {
             waveManager.component(ofType: WaveManagerComponent.self)?.stop()
@@ -253,45 +257,59 @@ final class GameScene: SKScene {
         }
         let wasFirstPlay = score.isFirstPlay
         score.saveAndFinalize()
-        
-        let overlay = GameOverNode(score: score.current,
-                                   highScore: score.high,
-                                   isFirstPlay: wasFirstPlay,
-                                   sceneSize: size)
-        overlay.position = CGPoint(x: size.width / 2, y: size.height / 2)
-        overlay.zPosition = 100
-        addChild(overlay)
-        gameOverNode = overlay
-        
-        overlay.onRetry    = { [weak self] in self?.restartGame() }
-        overlay.onMainMenu = { [weak self] in self?.goToMainMenu() }
-    }
-    
-    private func restartGame() {
-        gameOverNode = nil
-        let newScene = GameScene()
-        newScene.scaleMode = scaleMode
-        view?.presentScene(newScene, transition: .fade(withDuration: 0.4))
-    }
-    
-    private func goToMainMenu() {
-        removeAllActions()
-        removeAllChildren()
-        registry.removeAll()
-        
-        DispatchQueue.main.async { [weak self] in
-            self?.onGoToMainMenu?()
-        }
+
+        onGameOver?(score.current, score.high, wasFirstPlay)
     }
 
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let touch = touches.first else { return }
-        let loc = touch.location(in: self)
-        if let overlay = gameOverNode {
-            overlay.handleTap(at: loc)
-        }
+    func restartGame() {
+        resetWorld()
+        onRetry?()
     }
-    
+
+    func goToMainMenu() {
+        onMainMenu?()
+    }
+
+    private func resetWorld() {
+        for entity in registry.all where entity.archetype == .human
+                                       || entity.archetype == .tower
+                                       || entity.archetype == .trap
+                                       || entity.archetype == .projectile {
+            if let node = entity.component(ofType: SpriteComponent.self)?.node {
+                node.removeFromParent()
+            }
+            registry.remove(entity)
+        }
+        if let scoreEntity = registry.all.first(where: { $0 is ScoreEntity }) {
+            registry.remove(scoreEntity)
+        }
+        if let waveManager = waveManagerEntity {
+            waveManager.component(ofType: WaveManagerComponent.self)?.stop()
+            registry.remove(waveManager)
+        }
+        waveManagerEntity = nil
+
+        pendingRemovals.removeAll(keepingCapacity: true)
+        fxLayer.removeAllChildren()
+        humansLayer.removeAllChildren()
+        towersLayer.removeAllChildren()
+        trapsLayer.removeAllChildren()
+        projectilesLayer.removeAllChildren()
+        removeAllActions()
+
+        registry.pause?.isPaused = false
+        isGameOver = false
+        lastUpdateTime = 0
+        currentSpirit = 10
+        updateSpirit(currentSpirit)
+
+        registry.add(ScoreEntity())
+        scoreLabel?.removeAllActions()
+        scoreLabel?.text = "0"
+
+        configureWaveManager()
+    }
+
     func spawnTower(_ character: CharacterData, at point: CGPoint) {
         let entity = TowerEntity(character: character)
         entity.component(ofType: SpriteComponent.self)?.position = point
@@ -416,20 +434,14 @@ final class GameScene: SKScene {
     }
     
     func canPlace(_ character: CharacterData, at scenePoint: CGPoint) -> Bool {
-        
-        if tooCloseToExisting(scenePoint) { return false }
         guard let path = registry.path else { return false }
-        
-        let dist = path.distance(to: scenePoint)
-        let towerPlacementDistance: CGFloat = 26
-        let trapPlacementDistance: CGFloat = 5
-        
         switch character.kind {
         case .tower:
-            return dist > towerPlacementDistance
-            
+            let foot = TowerPlacement.foot(at: scenePoint)
+            if towerTooCloseToExisting(foot) { return false }
+            return !path.tileRects.contains { foot.overlaps(tile: $0) }
         case .trap:
-            return dist <= trapPlacementDistance
+            return path.distance(to: scenePoint) <= TrapPlacement.pathTolerance
         }
     }
     
@@ -494,7 +506,11 @@ final class GameScene: SKScene {
         wpNodes.forEach { node in
             if !(node is SKSpriteNode) { node.isHidden = true }
         }
-        registry.add(PathEntity(waypoints: points, halfWidth: tileSize / 2))
+        var tileRects: [CGRect] = []
+        if let ref = mapLayer.children.first {
+            collectTileRects(in: ref, authoredLogical: baseTileSize, into: &tileRects)
+        }
+        registry.add(PathEntity(waypoints: points, tileRects: tileRects))
     }
     
     private func findFirstTile(_ root: SKNode, median: CGFloat) -> SKSpriteNode? {
@@ -515,6 +531,23 @@ final class GameScene: SKScene {
         for c in n.children { dumpNodes(c, depth: depth + 1) }
     }
     
+    private func collectTileRects(in root: SKNode, authoredLogical: CGFloat, into out: inout [CGRect]) {
+        for child in root.children {
+            if let sprite = child as? SKSpriteNode {
+                let minDim = min(sprite.size.width, sprite.size.height)
+                let maxDim = max(sprite.size.width, sprite.size.height)
+                if abs(minDim - authoredLogical) < 1.0, abs(maxDim - authoredLogical) < 1.0 {
+                    let c = convert(sprite.position, from: sprite.parent ?? root)
+                    out.append(CGRect(x: c.x - tileSize / 2, y: c.y - tileSize / 2,
+                                      width: tileSize, height: tileSize))
+                }
+            }
+            if !child.children.isEmpty {
+                collectTileRects(in: child, authoredLogical: authoredLogical, into: &out)
+            }
+        }
+    }
+
     private func measureTileSize(in scene: SKScene) -> CGFloat? {
         var sizes: [CGFloat] = []
         func walk(_ n: SKNode) {
@@ -636,54 +669,14 @@ final class GameScene: SKScene {
     private func setupMapUI() {
         guard let path = registry.path else { return }
         let endPoint = path.waypoints.last ?? .zero
-        let dukunOffset = CGPoint(x: 0, y: -20)
-        let counterOffset = CGPoint(x: -5, y: -70)
-
-        let dukun = SKSpriteNode(imageNamed: "shaman")
-        dukun.setScale(0.8)
-        dukun.position = CGPoint(
-            x: endPoint.x + dukunOffset.x,
-            y: endPoint.y + dukunOffset.y
-        )
-        dukun.zPosition = 10
-        mapLayer.addChild(dukun)
-
-        let float = SKAction.sequence([
-            .moveBy(x: 0, y: 10, duration: 1),
-            .moveBy(x: 0, y: -10, duration: 1)
-        ])
-        dukun.run(.repeatForever(float))
-
-        let counter = SKSpriteNode(imageNamed: "spirit_counter")
-        counter.size = CGSize(width: 110, height: 50)
-        counter.position = CGPoint(
-            x: endPoint.x + counterOffset.x,
-            y: endPoint.y + counterOffset.y
-        )
-        counter.zPosition = 11
-        mapLayer.addChild(counter)
-
-        spiritCounterNode = counter
-
-        let label = GameLabelNode(
-            text: "0",
-            fontSize: 20,
-            color: .black
-        )
-        label.zPosition = 12
-        label.position = CGPoint(x: 5, y: 3)
-
-        counter.addChild(label)
-        spiritLabel = label
+        let hud = ShamanHUD(anchor: endPoint)
+        mapLayer.addChild(hud)
+        shamanHUD = hud
     }
 
     func updateSpirit(_ value: Int) {
-        spiritLabel?.text = "\(value)"
-
-        spiritCounterNode?.run(.sequence([
-            .scale(to: 1.15, duration: 0.08),
-            .scale(to: 1.0, duration: 0.08)
-        ]))
+        shamanHUD?.updateSpirit(value)
+        onSpiritChanged?(value)
     }
 
     private func addSpirit(_ amount: Int) {

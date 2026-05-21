@@ -21,8 +21,6 @@ final class HeartbeatSystem: GameSystem {
     private let minInterval: TimeInterval = 0.18
     private let maxInterval: TimeInterval = 0.95
 
-    private let generator = UIImpactFeedbackGenerator(style: .heavy)
-
     init(scene: GameScene? = nil) {
         self.scene = scene
     }
@@ -82,9 +80,8 @@ final class HeartbeatSystem: GameSystem {
         closeness: CGFloat
     ) {
 
-        generator.prepare()
-
-        generator.impactOccurred(
+        HapticManager.shared.impact(
+            .heavy,
             intensity: max(0.75, closeness)
         )
 
@@ -92,9 +89,8 @@ final class HeartbeatSystem: GameSystem {
             deadline: .now() + 0.085
         ) {
 
-            self.generator.prepare()
-
-            self.generator.impactOccurred(
+            HapticManager.shared.impact(
+                .heavy,
                 intensity: max(
                     0.65,
                     closeness * 0.9

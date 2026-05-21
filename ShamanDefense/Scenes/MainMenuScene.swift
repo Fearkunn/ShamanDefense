@@ -14,6 +14,7 @@ class MainMenuScene: SKScene {
 
     /// Di-set oleh ContentView. Dipanggil saat user tap Start.
     var onStartGame: (() -> Void)?
+    var onOpenCharacters: (() -> Void)?
 
     private var optionPopup: OptionPopupNode?
 
@@ -229,6 +230,25 @@ class MainMenuScene: SKScene {
 
         startNode.run(.sequence([scaleDown, scaleUp, navigate]))
     }
+    
+    private func goToCharacters() {
+        guard let charactersNode = childNode(withName: "characters") else { return }
+        
+        let scaleDown = SKAction.scale(to: 0.92, duration: 0.08)
+        let scaleUp   = SKAction.scale(to: 1.00, duration: 0.08)
+        
+        let navigate = SKAction.run { [weak self] in
+                DispatchQueue.main.async {
+                    self?.onOpenCharacters?()
+                }
+            }
+        
+        charactersNode.run(
+                .sequence([scaleDown, scaleUp, navigate])
+            )
+
+    }
+    
 
     // MARK: - Option Popup
 
@@ -252,18 +272,20 @@ class MainMenuScene: SKScene {
 
         let location    = touch.location(in: self)
         let touchedNode = atPoint(location)
+        
+        let nodeName = touchedNode.name ?? touchedNode.parent?.name
 
         if let popup = optionPopup {
             popup.handleTouchBegan(at: location, touchedNode: touchedNode)
             return
         }
 
-        switch touchedNode.name {
+        switch nodeName{
         case "start":
             goToGame()
 
         case "characters":
-            break // TODO: sambungkan ke Characters screen
+            goToCharacters() // TODO: sambungkan ke Characters screen
 
         case "settings":
             showOptionPopup()
