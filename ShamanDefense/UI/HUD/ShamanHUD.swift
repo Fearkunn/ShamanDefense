@@ -13,7 +13,7 @@ final class ShamanHUD: SKNode {
     init(anchor: CGPoint) {
         let shaman = SKSpriteNode(imageNamed: "shaman")
         shaman.setScale(0.8)
-        shaman.position = CGPoint(x: 0, y: -50)
+        shaman.position = CGPoint(x: 0, y: -40)
         shaman.zPosition = 10
 
         counterNode = SKSpriteNode(imageNamed: "spirit_counter")

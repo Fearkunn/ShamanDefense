@@ -32,17 +32,17 @@ final class GameScene: SKScene {
     private var shamanHUD: ShamanHUD?
     private var waveManagerEntity: WaveManagerEntity?
     private(set) var isGameOver = false
-
+    
     var onIntermission: ((Int) -> Void)?
     var onWaveStart: ((Int) -> Void)?
     var onRetry: (() -> Void)?
     var onMainMenu: (() -> Void)?
     var onGameOver: ((_ score: Int, _ highScore: Int, _ isFirstPlay: Bool) -> Void)?
     var onSpiritChanged: ((Int) -> Void)?
-
+    
     private var currentSpirit: Int = 10
     private var hasPlayedWaveSpawnSound = false
-
+    
     override init() {
         let heartbeatSystem = HeartbeatSystem()
         
@@ -75,7 +75,7 @@ final class GameScene: SKScene {
         }
         return false
     }
-
+    
     func dragIndicatorRadius(for kind: EntityKind) -> CGFloat {
         switch kind {
         case .tower: return TowerPlacement.radius
@@ -180,13 +180,6 @@ final class GameScene: SKScene {
             mgr.humansAliveCount = { [weak self] in
                 self?.registry.humans.count ?? 0
             }
-            
-            SoundManager.shared.playSFX(
-                "wave.wav",
-                on: self
-            )
-
-            onIntermission?(1)
         }
         waveManagerEntity = waveManager
         registry.add(waveManager)
@@ -243,6 +236,9 @@ final class GameScene: SKScene {
         guard !isGameOver, let score = registry.score else { return }
         isGameOver = true
         
+        let originalVolume = OptionViewModel.shared.backgroundMusic
+        SoundManager.shared.setBGMVolume(originalVolume * 0.2)
+        
         SoundManager.shared.playSFX(
             "game_over.wav",
             on: self
@@ -257,24 +253,30 @@ final class GameScene: SKScene {
         }
         let wasFirstPlay = score.isFirstPlay
         score.saveAndFinalize()
-
+        
         onGameOver?(score.current, score.high, wasFirstPlay)
     }
-
+    
     func restartGame() {
+        SoundManager.shared.setBGMVolume(
+            OptionViewModel.shared.backgroundMusic
+        )
         resetWorld()
         onRetry?()
     }
-
+    
     func goToMainMenu() {
+        SoundManager.shared.setBGMVolume(
+            OptionViewModel.shared.backgroundMusic
+        )
         onMainMenu?()
     }
-
+    
     private func resetWorld() {
         for entity in registry.all where entity.archetype == .human
-                                       || entity.archetype == .tower
-                                       || entity.archetype == .trap
-                                       || entity.archetype == .projectile {
+        || entity.archetype == .tower
+        || entity.archetype == .trap
+        || entity.archetype == .projectile {
             if let node = entity.component(ofType: SpriteComponent.self)?.node {
                 node.removeFromParent()
             }
@@ -288,7 +290,7 @@ final class GameScene: SKScene {
             registry.remove(waveManager)
         }
         waveManagerEntity = nil
-
+        
         pendingRemovals.removeAll(keepingCapacity: true)
         fxLayer.removeAllChildren()
         humansLayer.removeAllChildren()
@@ -296,20 +298,20 @@ final class GameScene: SKScene {
         trapsLayer.removeAllChildren()
         projectilesLayer.removeAllChildren()
         removeAllActions()
-
+        
         registry.pause?.isPaused = false
         isGameOver = false
         lastUpdateTime = 0
         currentSpirit = 10
         updateSpirit(currentSpirit)
-
+        
         registry.add(ScoreEntity())
         scoreLabel?.removeAllActions()
         scoreLabel?.text = "0"
-
+        
         configureWaveManager()
     }
-
+    
     func spawnTower(_ character: CharacterData, at point: CGPoint) {
         let entity = TowerEntity(character: character)
         entity.component(ofType: SpriteComponent.self)?.position = point
@@ -369,7 +371,7 @@ final class GameScene: SKScene {
     func applyAoEDamage(at point: CGPoint, radius: CGFloat, amount: CGFloat, color: SKColor) {
         applyAoEDamage(at: point, radius: radius, amount: amount, color: color, showsFlash: true)
     }
-
+    
     func applyAoEDamage(at point: CGPoint, radius: CGFloat, amount: CGFloat, color: SKColor, showsFlash: Bool) {
         if showsFlash {
             let flash = SKShapeNode(circleOfRadius: radius)
@@ -383,7 +385,7 @@ final class GameScene: SKScene {
                 .removeFromParent()
             ]))
         }
-
+        
         for human in registry.humans {
             guard let pos = human.component(ofType: SpriteComponent.self)?.position,
                   let health = human.component(ofType: HealthComponent.self), health.isAlive else { continue }
@@ -525,7 +527,7 @@ final class GameScene: SKScene {
             }
         }
     }
-
+    
     private func measureTileSize(in scene: SKScene) -> CGFloat? {
         var sizes: [CGFloat] = []
         func walk(_ n: SKNode) {
@@ -587,12 +589,12 @@ final class GameScene: SKScene {
         }
         installEntity(entity, in: trapsLayer)
     }
-
+    
     private func playYayangPlacementSequence(_ entity: TrapEntity) {
         guard let root = entity.component(ofType: SpriteComponent.self)?.node,
               let trigger = entity.component(ofType: ProximityTriggerComponent.self),
               let stateMachine = entity.component(ofType: StateMachineComponent.self) else { return }
-
+        
         trigger.armed = false
         root.removeAction(forKey: "yayang_placement_sequence")
         let originalZPosition = root.zPosition
@@ -601,7 +603,7 @@ final class GameScene: SKScene {
         root.position = hudLayer.convert(worldPosition, from: self)
         root.zPosition = 60
         hudLayer.addChild(root)
-
+        
         let dimOverlay = SKShapeNode(rectOf: size)
         dimOverlay.position = CGPoint(x: size.width / 2, y: size.height / 2)
         dimOverlay.fillColor = .black
@@ -610,7 +612,7 @@ final class GameScene: SKScene {
         dimOverlay.zPosition = 49
         hudLayer.addChild(dimOverlay)
         dimOverlay.run(.fadeAlpha(to: 0.35, duration: 0.25))
-
+        
         let centerPoint = CGPoint(x: size.width / 2, y: size.height / 2)
         let sequence = SKAction.sequence([
             .wait(forDuration: 0.70),
@@ -643,7 +645,7 @@ final class GameScene: SKScene {
         sequence.timingMode = .easeInEaseOut
         root.run(sequence, withKey: "yayang_placement_sequence")
     }
-
+    
     private func setupMapUI() {
         guard let path = registry.path else { return }
         let endPoint = path.waypoints.last ?? .zero
@@ -651,26 +653,26 @@ final class GameScene: SKScene {
         mapLayer.addChild(hud)
         shamanHUD = hud
     }
-
+    
     func updateSpirit(_ value: Int) {
         shamanHUD?.updateSpirit(value)
         onSpiritChanged?(value)
     }
-
+    
     private func addSpirit(_ amount: Int) {
         currentSpirit += amount
         updateSpirit(currentSpirit)
     }
-
+    
     @discardableResult
     private func spendSpirit(_ amount: Int) -> Bool {
         guard currentSpirit >= amount else {
             return false
         }
-
+        
         currentSpirit -= amount
         updateSpirit(currentSpirit)
         return true
     }
-
+    
 }
