@@ -20,8 +20,8 @@ struct GameOverOverlayView: View {
 
     var body: some View {
         GeometryReader { geo in
-            let panelW = geo.size.width * 0.68
-            let panelH = panelW * 1.42
+            let panelW = geo.size.width * 0.75
+            let panelH = panelW * 1.25
             let titleW = geo.size.width * 0.72
             let titleH = titleW * 0.67
             let labelColor = Color(white: 0.25)
@@ -44,14 +44,14 @@ struct GameOverOverlayView: View {
                             Text("\(data.score)")
                                 .font(.custom("Newyear Coffee", size: 68))
                                 .foregroundStyle(labelColor)
-                                .position(x: panelW / 2, y: panelH / 2 - 85)
+                                .position(x: panelW / 2, y: panelH / 2 - 105)
 
                             // High score
                             if !data.isFirstPlay {
                                 Text("HIGH SCORE: \(data.highScore)")
                                     .font(.custom("Newyear Coffee", size: 25))
                                     .foregroundStyle(labelColor)
-                                    .position(x: panelW / 2, y: panelH / 2 - 25)
+                                    .position(x: panelW / 2, y: panelH / 2 - 45)
                             }
 
                             // Retry button (y = -55 from panel center → panelH/2 + 55 from top)
@@ -60,7 +60,7 @@ struct GameOverOverlayView: View {
                                           height: 70,
                                           fontSize: 38,
                                           action: { onRetry?() })
-                                .position(x: panelW / 2, y: panelH / 2 + 55)
+                                .position(x: panelW / 2, y: panelH / 2 + 45)
 
                             // Home button (y = -130 from panel center)
                             overlayButton(text: "BACK TO HOME",
@@ -68,7 +68,7 @@ struct GameOverOverlayView: View {
                                           height: 55,
                                           fontSize: 20,
                                           action: { onMainMenu?() })
-                                .position(x: panelW / 2, y: panelH / 2 + 130)
+                                .position(x: panelW / 2, y: panelH / 2 + 120)
                         }
                     )
                     .position(x: geo.size.width / 2, y: geo.size.height / 2 + 50)
