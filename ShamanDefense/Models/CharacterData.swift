@@ -13,7 +13,38 @@ enum EntityKind {
 }
 
 enum GhostMetrics {
-    static let diameter: CGFloat = 30
+    static let diameter: CGFloat = 40
+}
+
+struct TowerFoot {
+    let center: CGPoint
+    let radius: CGFloat
+
+    func overlaps(tile: CGRect) -> Bool {
+        let cx = max(tile.minX, min(center.x, tile.maxX))
+        let cy = max(tile.minY, min(center.y, tile.maxY))
+        let dx = center.x - cx, dy = center.y - cy
+        return dx * dx + dy * dy < radius * radius
+    }
+
+    func overlaps(_ other: TowerFoot) -> Bool {
+        let dx = center.x - other.center.x, dy = center.y - other.center.y
+        let r = radius + other.radius
+        return dx * dx + dy * dy < r * r
+    }
+}
+
+enum TowerPlacement {
+    static let radius: CGFloat = GhostMetrics.diameter / 2
+
+    static func foot(at feet: CGPoint) -> TowerFoot {
+        TowerFoot(center: CGPoint(x: feet.x, y: feet.y + radius), radius: radius)
+    }
+}
+
+enum TrapPlacement {
+    static let pathTolerance: CGFloat = 10
+    static let visualRadius: CGFloat = GhostMetrics.diameter / 2
 }
 
 struct TowerStats: Hashable {

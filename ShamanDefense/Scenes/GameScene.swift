@@ -11,10 +11,9 @@ import UIKit
 
 final class GameScene: SKScene {
     
-    private let baseTileSize: CGFloat = 36
+    private let baseTileSize: CGFloat = 80
     private let spriteTileMultiplier: CGFloat = 3
-    private var tileSize: CGFloat = 36
-    private let minPlacementSpacing: CGFloat = GhostMetrics.diameter
+    private var tileSize: CGFloat = 80
     
     private(set) var registry: EntityRegistry
     var pauseComponent: PauseComponent? { registry.pause }
@@ -67,15 +66,21 @@ final class GameScene: SKScene {
     required init?(coder: NSCoder) { fatalError("init(coder:) not implemented") }
     
     
-    private func tooCloseToExisting(_ point: CGPoint) -> Bool {
-        for entity in registry.all {
-            guard let blocker = entity.component(ofType: PlacementBlockerComponent.self),
-                  let pos = entity.component(ofType: SpriteComponent.self)?.position else { continue }
-            if hypot(pos.x - point.x, pos.y - point.y) < blocker.radius + minPlacementSpacing / 2 {
+    private func towerTooCloseToExisting(_ foot: TowerFoot) -> Bool {
+        for entity in registry.towers {
+            guard let pos = entity.component(ofType: SpriteComponent.self)?.position else { continue }
+            if foot.overlaps(TowerPlacement.foot(at: pos)) {
                 return true
             }
         }
         return false
+    }
+
+    func dragIndicatorRadius(for kind: EntityKind) -> CGFloat {
+        switch kind {
+        case .tower: return TowerPlacement.radius
+        case .trap:  return TrapPlacement.visualRadius
+        }
     }
     
     override func didMove(to view: SKView) {
@@ -333,7 +338,7 @@ final class GameScene: SKScene {
         registry.pause?.isPaused = false
         isGameOver = false
         lastUpdateTime = 0
-        currentSpirit = 6
+        currentSpirit = 10
         updateSpirit(currentSpirit)
 
         registry.add(ScoreEntity())
@@ -467,20 +472,14 @@ final class GameScene: SKScene {
     }
     
     func canPlace(_ character: CharacterData, at scenePoint: CGPoint) -> Bool {
-        
-        if tooCloseToExisting(scenePoint) { return false }
         guard let path = registry.path else { return false }
-        
-        let dist = path.distance(to: scenePoint)
-        let towerPlacementDistance: CGFloat = 26
-        let trapPlacementDistance: CGFloat = 5
-        
         switch character.kind {
         case .tower:
-            return dist > towerPlacementDistance
-            
+            let foot = TowerPlacement.foot(at: scenePoint)
+            if towerTooCloseToExisting(foot) { return false }
+            return !path.tileRects.contains { foot.overlaps(tile: $0) }
         case .trap:
-            return dist <= trapPlacementDistance
+            return path.distance(to: scenePoint) <= TrapPlacement.pathTolerance
         }
     }
     
@@ -545,7 +544,11 @@ final class GameScene: SKScene {
         wpNodes.forEach { node in
             if !(node is SKSpriteNode) { node.isHidden = true }
         }
-        registry.add(PathEntity(waypoints: points, halfWidth: tileSize / 2))
+        var tileRects: [CGRect] = []
+        if let ref = mapLayer.children.first {
+            collectTileRects(in: ref, authoredLogical: baseTileSize, into: &tileRects)
+        }
+        registry.add(PathEntity(waypoints: points, tileRects: tileRects))
     }
     
     private func findFirstTile(_ root: SKNode, median: CGFloat) -> SKSpriteNode? {
@@ -566,6 +569,23 @@ final class GameScene: SKScene {
         for c in n.children { dumpNodes(c, depth: depth + 1) }
     }
     
+    private func collectTileRects(in root: SKNode, authoredLogical: CGFloat, into out: inout [CGRect]) {
+        for child in root.children {
+            if let sprite = child as? SKSpriteNode {
+                let minDim = min(sprite.size.width, sprite.size.height)
+                let maxDim = max(sprite.size.width, sprite.size.height)
+                if abs(minDim - authoredLogical) < 1.0, abs(maxDim - authoredLogical) < 1.0 {
+                    let c = convert(sprite.position, from: sprite.parent ?? root)
+                    out.append(CGRect(x: c.x - tileSize / 2, y: c.y - tileSize / 2,
+                                      width: tileSize, height: tileSize))
+                }
+            }
+            if !child.children.isEmpty {
+                collectTileRects(in: child, authoredLogical: authoredLogical, into: &out)
+            }
+        }
+    }
+
     private func measureTileSize(in scene: SKScene) -> CGFloat? {
         var sizes: [CGFloat] = []
         func walk(_ n: SKNode) {

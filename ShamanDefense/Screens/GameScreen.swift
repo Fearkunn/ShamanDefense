@@ -106,7 +106,9 @@ struct GameScreen: View {
                     let liftedY = drag.location.y - dragLift
                     let scenePoint = CGPoint(x: drag.location.x, y: geo.size.height - liftedY)
                     let placeable = scene.canPlace(drag.character, at: scenePoint)
-                    DragPreview(character: drag.character, isPlaceable: placeable)
+                    DragPreview(character: drag.character,
+                                placementRadius: scene.dragIndicatorRadius(for: drag.character.kind),
+                                isPlaceable: placeable)
                         .position(x: drag.location.x, y: liftedY)
                         .opacity(0.85)
                         .allowsHitTesting(false)
