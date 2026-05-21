@@ -53,6 +53,7 @@ class OptionScenePopupNode: SKNode {
         setupOverlay()
         setupBackground()
         setupTitle()
+        setupBackButton()
         setupMusicSection()
         setupSoundSection()
         setupHapticSection()
@@ -188,7 +189,10 @@ class OptionScenePopupNode: SKNode {
 
     func handleTouchBegan(at location: CGPoint, touchedNode: SKNode) {
         switch touchedNode.name {
-
+            
+        case "close_popup":
+            delegate?.optionPopupDidRequestClose(self)
+            
         case "haptic_switch":
             optionViewModel.hapticEnabled.toggle()
             hapticSwitchNode?.texture = SKTexture(imageNamed: hapticSwitchImageName)
@@ -198,13 +202,7 @@ class OptionScenePopupNode: SKNode {
             break // Ditangani di handleTouchMoved
 
         default:
-            // Tap di luar area popup → minta close ke delegate
-            if let popup = popupBackground {
-                let popupFrame = popup.calculateAccumulatedFrame()
-                if !popupFrame.contains(location) {
-                    delegate?.optionPopupDidRequestClose(self)
-                }
-            }
+            break
         }
     }
 
@@ -229,6 +227,34 @@ class OptionScenePopupNode: SKNode {
         default:
             break
         }
+    }
+    
+    // MARK: - Back Button
+
+    private func setupBackButton() {
+
+        guard let popup = popupBackground else { return }
+
+        let backButton = SKSpriteNode(imageNamed: "continue")
+
+        backButton.name = "close_popup"
+
+        backButton.size = CGSize(
+            width: 60,
+            height: 60
+        )
+
+        // Mirror horizontal
+        backButton.xScale = -1
+
+        backButton.position = CGPoint(
+            x: -140,
+            y: 365
+        )
+
+        backButton.zPosition = 5
+
+        popup.addChild(backButton)
     }
 }
 

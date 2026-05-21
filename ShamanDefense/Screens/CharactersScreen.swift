@@ -39,7 +39,7 @@ struct CharactersScreen: View {
                 VStack(spacing: 0) {
                     topBar
                         .padding(.top, 10)
-                        .padding(.horizontal, 18)
+                        .padding(.horizontal, 10)
 
                     CharacterDetailCardView(
                         selectedCharacter: selectedCharacter
@@ -73,6 +73,7 @@ struct CharactersScreen: View {
                     .scaledToFit()
                     .frame(width: 60, height: 60)
                     .scaleEffect(x: -1, y: 1)
+                    .offset(y: 20)
             }
 
             Spacer()
