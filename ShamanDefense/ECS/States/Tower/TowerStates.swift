@@ -64,7 +64,7 @@ final class TowerFiringState: GameState {
             let originalXScale = body.xScale
             let originalYScale = body.yScale
 
-            let headbuttTexture = SKTexture(imageNamed: "poci_headbutt")
+            let headbuttTexture = CharacterSprites.cachedTexture(named: "poci_headbutt")
             body.texture = headbuttTexture
             body.size = originalSize
             let facingX: CGFloat

@@ -73,7 +73,7 @@ final class HumanEntity: GameEntity {
 
         let duration = Self.deathAnimationDuration
         if let body = bodySprite {
-            let deadTexture = SKTexture(imageNamed: "human_dead")
+            let deadTexture = CharacterSprites.cachedTexture(named: "human_dead")
             body.texture = deadTexture
             body.size = CharacterSprites.size(for: deadTexture, height: CharacterSprites.spriteHeight)
             body.removeAllActions()
@@ -95,8 +95,8 @@ final class HumanEntity: GameEntity {
     private static func frames(direction: String, archetype: HumanArchetype) -> [SKTexture] {
         let suffix = archetype.spriteSuffix.map { "_\($0)" } ?? ""
         return [
-            SKTexture(imageNamed: "human_\(direction)_1\(suffix)"),
-            SKTexture(imageNamed: "human_\(direction)_2\(suffix)")
+            CharacterSprites.cachedTexture(named: "human_\(direction)_1\(suffix)"),
+            CharacterSprites.cachedTexture(named: "human_\(direction)_2\(suffix)")
         ]
     }
 }

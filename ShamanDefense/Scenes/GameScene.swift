@@ -84,6 +84,10 @@ final class GameScene: SKScene {
     }
     
     override func didMove(to view: SKView) {
+        let atlases = ["characters", "human", "tiles", "Ghost Effect"].map { SKTextureAtlas(named: $0) }
+        SKTextureAtlas.preloadTextureAtlases(atlases) { }
+        SoundManager.shared.preload(["human_spawn.wav", "wave.wav", "human_dead.wav", "game_over.wav", "wrong_placement.wav", "placement.wav", "yayang_attack.wav", "yuyul_attack.wav", "keti_attack.wav", "poci_attack.wav", "gugun_attack.wav"])
+
         backgroundColor = SKColor(red: 0.13, green: 0.11, blue: 0.16, alpha: 1)
         scaleMode = .resizeFill
         anchorPoint = CGPoint(x: 0, y: 0)

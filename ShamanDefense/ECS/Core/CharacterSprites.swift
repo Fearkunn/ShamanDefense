@@ -9,6 +9,15 @@ enum CharacterSprites {
     static let spriteHeight: CGFloat = 36
     static var renderHeight: CGFloat = spriteHeight
 
+    private static var textureCache: [String: SKTexture] = [:]
+
+    static func cachedTexture(named name: String) -> SKTexture {
+        if let tex = textureCache[name] { return tex }
+        let tex = SKTexture(imageNamed: name)
+        textureCache[name] = tex
+        return tex
+    }
+
     static func makeGhostAura(yOffset: CGFloat) -> SKShapeNode {
         let aura = SKShapeNode(
             ellipseOf: CGSize(
@@ -25,7 +34,7 @@ enum CharacterSprites {
     }
 
     static func texture(for id: GhostID, facing: FacingDirection) -> SKTexture {
-        SKTexture(imageNamed: assetName(for: id, facing: facing))
+        cachedTexture(named: assetName(for: id, facing: facing))
     }
 
     static func size(for texture: SKTexture, height: CGFloat = renderHeight) -> CGSize {
