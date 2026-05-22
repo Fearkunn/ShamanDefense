@@ -13,6 +13,7 @@ struct CharacterLabelsView: View {
     let icon: String
     let titleSize: CGFloat
     let valueSize: CGFloat
+    private var valueOffsetX: CGFloat { title == "Cost" ? -30 : -25 }
 
     init(title: String, value: String, icon: String, titleSize: CGFloat = 10, valueSize: CGFloat = 20) {
         self.title = title
@@ -65,7 +66,7 @@ struct CharacterLabelsView: View {
                     .lineLimit(1)
                     .layoutPriority(2)
                     .frame(minWidth: 38, maxWidth: 64, alignment: .trailing)
-                    .offset(x: -25)
+                    .offset(x: valueOffsetX)
             }
             .padding(.horizontal, 12)
         }
@@ -76,7 +77,15 @@ struct CharacterLabelsView: View {
 
 extension CharacterData {
     var rangeLabel: String {
-        kind == .tower ? "Mid" : "Short"
+        guard kind == .tower, let range = tower?.range else { return "-" }
+        switch range {
+        case ..<61:
+            return "Long"
+        case 61..<91:
+            return "Mid"
+        default:
+            return "Short"
+        }
     }
     
     var cooldownLabel: String {
@@ -84,9 +93,13 @@ extension CharacterData {
     }
     
     var attackSpeedLabel: String {
-        switch kind {
-        case .tower: return "Low"
-        case .trap: return "Mid"
+        guard kind == .tower, let fireInterval = tower?.fireInterval else { return "-" }
+        if fireInterval > 1.3 {
+            return "Slow"
+        } else if fireInterval > 0.8 {
+            return "Mid"
+        } else {
+            return "Fast"
         }
     }
     

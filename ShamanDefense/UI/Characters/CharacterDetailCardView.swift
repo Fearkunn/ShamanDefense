@@ -83,7 +83,7 @@ struct CharacterDetailCardView: View {
                         trapPreviewBox
 
                         VStack(spacing: 15) {
-                            CharacterLabelsView(title: "Cost", value: "\(selectedCharacter.cost * 100)", icon: "icon_ghost")
+                            CharacterLabelsView(title: "Cost", value: "\(selectedCharacter.cost)", icon: "icon_ghost")
                                 .offset(x: -180)
                             CharacterLabelsView(title: "Duration", value: selectedCharacter.durationLabel, icon: "icon_cooldown")
                                 .offset(y: -65)
@@ -97,7 +97,7 @@ struct CharacterDetailCardView: View {
                         previewBox
                         
                         VStack(spacing: 15) {
-                            CharacterLabelsView(title: "Cost", value: "\(selectedCharacter.cost * 100)", icon: "icon_ghost")
+                            CharacterLabelsView(title: "Cost", value: "\(selectedCharacter.cost)", icon: "icon_ghost")
                             CharacterLabelsView(title: "Range", value: selectedCharacter.rangeLabel, icon: "icon_range")
                             CharacterLabelsView(title: "Attack Speed", value: selectedCharacter.attackSpeedLabel, icon: "icon_attack")
                             CharacterLabelsView(title: "Cooldown", value: selectedCharacter.cooldownLabel, icon: "icon_cooldown")
