@@ -33,7 +33,9 @@ class MainMenuScene: SKScene {
     // MARK: - Background
 
     private func setupBackground() {
+        childNode(withName: "background")?.removeFromParent()
         let background = SKSpriteNode(imageNamed: "background")
+        background.name = "background"
         background.position = CGPoint(x: size.width / 2, y: size.height / 2)
         background.size = size
         background.zPosition = -1
@@ -43,7 +45,9 @@ class MainMenuScene: SKScene {
     // MARK: - Logo
 
     private func setupLogo() {
+        childNode(withName: "logo")?.removeFromParent()
         let logo = SKSpriteNode(imageNamed: "logo")
+        logo.name = "logo"
         logo.position = CGPoint(x: size.width / 2, y: size.height * 0.78)
         logo.size = CGSize(width: 337, height: 132)
         logo.zPosition = 5
@@ -53,6 +57,7 @@ class MainMenuScene: SKScene {
     // MARK: - Settings Button
 
     private func setupSettingsButton() {
+        childNode(withName: "settings")?.removeFromParent()
         let settings = SKSpriteNode(imageNamed: "setting")
         settings.name = "settings"
         settings.position = CGPoint(x: size.width - 50, y: size.height - 80)
@@ -234,6 +239,7 @@ class MainMenuScene: SKScene {
     // MARK: - Start Button
 
     private func setupStartButton() {
+        childNode(withName: "start")?.removeFromParent()
         let start = SKSpriteNode(imageNamed: "title_background")
         start.name = "start"
         start.position = CGPoint(x: size.width / 2, y: size.height * 0.5)
@@ -251,6 +257,7 @@ class MainMenuScene: SKScene {
     // MARK: - Characters Button
 
     private func setupCharactersButton() {
+        childNode(withName: "characters")?.removeFromParent()
         let characters = SKSpriteNode(imageNamed: "button")
         characters.name = "characters"
         characters.position = CGPoint(x: size.width / 2, y: size.height * 0.43)
@@ -268,9 +275,11 @@ class MainMenuScene: SKScene {
     // MARK: - Main Character
 
     private func setupCharacter() {
-
+        
+        childNode(withName: "main_character")?.removeFromParent()
         let character = SKSpriteNode(imageNamed: "gugun_mainMenu")
-
+        character.name = "main_character"
+        
         character.position = CGPoint(
             x: size.width / 2,
             y: size.height * 0.10
