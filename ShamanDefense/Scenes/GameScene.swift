@@ -84,6 +84,9 @@ final class GameScene: SKScene {
     }
     
     override func didMove(to view: SKView) {
+        let atlases = ["characters", "human", "tiles", "Ghost Effect"].map { SKTextureAtlas(named: $0) }
+        SKTextureAtlas.preloadTextureAtlases(atlases) { }
+
         backgroundColor = SKColor(red: 0.13, green: 0.11, blue: 0.16, alpha: 1)
         scaleMode = .resizeFill
         anchorPoint = CGPoint(x: 0, y: 0)
