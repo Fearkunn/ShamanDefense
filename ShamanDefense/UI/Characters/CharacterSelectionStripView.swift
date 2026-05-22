@@ -16,19 +16,31 @@ struct CharacterSelectionStripView: View {
             RoundedRectangle(cornerRadius: 24, style: .continuous)
                 .fill(Color.black.opacity(0.18))
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 10) {
-                    ForEach(GameCollection.allCharacters) { character in
-                        Button {
-                            onSelectCharacter(character)
-                        } label: {
-                            characterTile(for: character)
+            ScrollViewReader { proxy in
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 2) {
+                        ForEach(GameCollection.allCharacters) { character in
+                            Button {
+                                onSelectCharacter(character)
+                            } label: {
+                                characterTile(for: character)
+                            }
+                            .buttonStyle(.plain)
+                            .id(character.id)
                         }
-                        .buttonStyle(.plain)
+                    }
+                    .padding(.leading, 25)
+                    .padding(.trailing, 25)
+                    .padding(.bottom, 20)
+                }
+                .onAppear {
+                    proxy.scrollTo(selectedCharacter.id, anchor: .center)
+                }
+                .onChange(of: selectedCharacter.id) { selectedID in
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        proxy.scrollTo(selectedID, anchor: .center)
                     }
                 }
-                .padding(.leading, 20)
-                .padding(.bottom, 20)
             }
         }
         .frame(height: 172)
@@ -40,7 +52,9 @@ struct CharacterSelectionStripView: View {
         return Image(bottomImageName(for: character.id))
             .resizable()
             .scaledToFit()
-            .frame(width: 120, height: 220)
+            .frame(width: 110, height: 200)
+            .scaleEffect(isSelected ? 1.08 : 0.92)
+            .animation(.easeInOut(duration: 0.2), value: isSelected)
     }
 
     private func bottomImageName(for id: GhostID) -> String {
