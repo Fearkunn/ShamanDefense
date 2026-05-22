@@ -51,7 +51,7 @@ struct GameOverOverlayView: View {
                             Text("HIGH SCORE: \(displayedHighScore)")
                                 .font(.custom("Newyear Coffee", size: 25))
                                 .foregroundStyle(labelColor)
-                                .position(x: panelW / 2, y: panelH / 2 - 45)
+                                .position(x: panelW / 2, y: panelH / 2 - 35)
 
                             // Retry button (y = -55 from panel center → panelH/2 + 55 from top)
                             overlayButton(text: "retry",

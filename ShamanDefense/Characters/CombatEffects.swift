@@ -96,4 +96,41 @@ extension GameScene {
         ])
         body.run(punch, withKey: "headbutt_hit_reaction")
     }
+
+    // gugun multi-target pulse
+    func playGugunMultiTargetPulse(at point: CGPoint, radius: CGFloat) {
+        let pulse = SKShapeNode(circleOfRadius: radius)
+        pulse.position = point
+        pulse.fillColor = SKColor(red: 1.0, green: 0.86, blue: 0.18, alpha: 0.22)
+        pulse.strokeColor = SKColor(red: 1.0, green: 0.93, blue: 0.45, alpha: 0.95)
+        pulse.lineWidth = 2.6
+        pulse.zPosition = 38
+        pulse.blendMode = .add
+        pulse.setScale(0.72)
+        fxLayer.addChild(pulse)
+        pulse.run(.sequence([
+            .group([
+                .scale(to: 1.08, duration: 0.18),
+                .fadeOut(withDuration: 0.18)
+            ]),
+            .removeFromParent()
+        ]))
+
+        let ring = SKShapeNode(circleOfRadius: radius * 0.78)
+        ring.position = point
+        ring.fillColor = .clear
+        ring.strokeColor = SKColor(red: 1.0, green: 0.98, blue: 0.70, alpha: 0.95)
+        ring.lineWidth = 2.0
+        ring.zPosition = 39
+        ring.blendMode = .add
+        ring.setScale(0.6)
+        fxLayer.addChild(ring)
+        ring.run(.sequence([
+            .group([
+                .scale(to: 1.12, duration: 0.16),
+                .fadeOut(withDuration: 0.16)
+            ]),
+            .removeFromParent()
+        ]))
+    }
 }
