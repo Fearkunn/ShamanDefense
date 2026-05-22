@@ -33,7 +33,7 @@ struct GameScreen: View {
             let dropZoneHeight = geo.size.height - trayHeight
 
             ZStack(alignment: .top) {
-                SpriteView(scene: scene, debugOptions: [.showsFPS, .showsPhysics, .showsNodeCount])
+                SpriteView(scene: scene, debugOptions: [.showsFPS, .showsNodeCount])
                     .frame(width: geo.size.width, height: geo.size.height)
                     .ignoresSafeArea()
                     .onAppear {
