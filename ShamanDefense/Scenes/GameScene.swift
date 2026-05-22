@@ -517,14 +517,11 @@ final class GameScene: SKScene {
     
     private func collectTileRects(in root: SKNode, authoredLogical: CGFloat, into out: inout [CGRect]) {
         for child in root.children {
-            if let sprite = child as? SKSpriteNode {
-                let minDim = min(sprite.size.width, sprite.size.height)
-                let maxDim = max(sprite.size.width, sprite.size.height)
-                if abs(minDim - authoredLogical) < 1.0, abs(maxDim - authoredLogical) < 1.0 {
-                    let c = convert(sprite.position, from: sprite.parent ?? root)
-                    out.append(CGRect(x: c.x - tileSize / 2, y: c.y - tileSize / 2,
-                                      width: tileSize, height: tileSize))
-                }
+            if let sprite = child as? SKSpriteNode,
+               sprite.name == "tile" || (sprite.name ?? "").hasPrefix("wp_") {
+                let c = convert(sprite.position, from: sprite.parent ?? root)
+                out.append(CGRect(x: c.x - tileSize / 2, y: c.y - tileSize / 2,
+                                  width: tileSize, height: tileSize))
             }
             if !child.children.isEmpty {
                 collectTileRects(in: child, authoredLogical: authoredLogical, into: &out)
