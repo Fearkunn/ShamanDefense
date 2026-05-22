@@ -25,22 +25,7 @@ struct CharacterDetailCardView: View {
     private let primaryTextColor = Color(hex: "#4B4B4B")
     
     private var balancedDescription: String {
-        let words = selectedCharacter.description.split(separator: " ")
-        guard words.count > 3 else { return selectedCharacter.description }
-        
-        if selectedCharacter.id == .yayang || selectedCharacter.id == .poci {
-            let firstBreak = words.count / 3
-            let secondBreak = (words.count * 2) / 3
-            let line1 = words[..<firstBreak].joined(separator: " ")
-            let line2 = words[firstBreak..<secondBreak].joined(separator: " ")
-            let line3 = words[secondBreak...].joined(separator: " ")
-            return line1 + "\n" + line2 + "\n" + line3
-        }
-        
-        let midpoint = words.count / 2
-        let firstLine = words[..<midpoint].joined(separator: " ")
-        let secondLine = words[midpoint...].joined(separator: " ")
-        return firstLine + "\n" + secondLine
+        selectedCharacter.description
     }
     
     var body: some View {

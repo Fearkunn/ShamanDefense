@@ -79,6 +79,7 @@ struct GugunAttackExecutor: GhostAttackExecutor {
                         color: context.launcher.color,
                         showsFlash: false
                     )
+                    scene.playGugunMultiTargetPulse(at: impactPoint, radius: aoe)
                 } else if let target,
                           let health = target.component(ofType: HealthComponent.self),
                           health.isAlive {
